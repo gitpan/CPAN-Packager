@@ -1,0 +1,44 @@
+---
+Test::Exception:
+  depends:
+    - Test::Simple
+  no_depends:
+    - Test::Builder::Tester
+
+HTTP::Engine:
+  depends:
+    - IO::Stringy
+  no_depends:
+    - IO::stringy
+    - URI
+
+Class::Accessor:
+  depends:
+    - Class::Classgen::Attribute
+  no_depends:
+    - Class::Classgen::classgen
+
+Class::Trigger:
+  depends:
+    - IO::Stringy
+  no_depends:
+    - IO::stringy
+
+PathTools:
+  build_skip: 1
+
+namespace::clean:
+  no_depends:
+    - kurila
+
+IO::stringy:
+  build_skip: 1
+
+Class::Classgen::classgen:
+  build_skip: 1
+
+Scalar::List::Utils:
+  build_skip: 1
+
+kurila:
+  build_skip: 1
