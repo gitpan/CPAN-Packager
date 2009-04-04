@@ -51,7 +51,8 @@ sub build {
         "$module->{module} does't have tarball. we can't find $module->{module} in CPAN "
         unless $module->{tgz};
 
-    my ( $spec_file_name, $spec_content )  = $self->generate_spec_file($module);
+    my ( $spec_file_name, $spec_content )
+        = $self->generate_spec_file($module);
     $self->generate_macro;
     $self->generate_rpmrc;
     $self->copy_module_sources_to_build_dir($module);
@@ -63,7 +64,8 @@ sub generate_spec_file {
     my ( $self, $module ) = @_;
     my $spec_content = $self->generate_spec_with_cpanflute( $module->{tgz} );
     my $spec_file_name = $self->package_name( $module->{module} ) . ".spec";
-    $spec_content = $self->filter_spec_file( $spec_content, $module->{module} );
+    $spec_content
+        = $self->filter_spec_file( $spec_content, $module->{module} );
     $self->create_spec_file( $spec_content, $spec_file_name );
     ( $spec_file_name, $spec_content );
 }
@@ -111,6 +113,7 @@ sub filter_requires_for_rpmbuild {
     $spec_content
         = $self->_filter_global_requires_for_rpmbuild( $spec_content,
         $module );
+    $spec_content = $self->_fix_requires( $spec_content, $module );
     $spec_content;
 }
 
@@ -168,8 +171,20 @@ sub _filter_global_requires_for_spec {
 
 sub _filter_requires {
     my ( $self, $spec_content, $no_depend_module ) = @_;
-    $spec_content =~ s/^Requires: perl\($no_depend_module\).+$//m;
-    $spec_content =~ s/^BuildRequires: perl\($no_depend_module\).+$//m;
+    $spec_content =~ s/^Requires: perl\($no_depend_module\).*?$//mg;
+    $spec_content =~ s/^BuildRequires: perl\($no_depend_module\).*?$//mg;
+    $spec_content;
+}
+
+sub _fix_requires {
+    my ( $self, $spec_content ) = @_;
+    my $fix_package_depends
+        = $self->config( global => 'fix_package_depends' );
+
+    foreach my $module ( keys %{$fix_package_depends} ) {
+        $spec_content
+            =~ s/^Requires: perl\($module\).*?$/Requires: perl\($fix_package_depends->{$module}\)/mg;
+    }
     $spec_content;
 }
 
@@ -203,7 +218,7 @@ sub _generate_global_filter_macro {
  
 /usr/lib/rpm/perl.req \$\* |\\
     sed };
-    for my $mod (@{ $self->config( global => 'no_depends' ) || () } ) {
+    for my $mod ( @{ $self->config( global => 'no_depends' ) || () } ) {
         print $fh "-e '/perl($mod)/d' ";
     }
     print $fh "\n";
@@ -286,14 +301,17 @@ sub copy_module_sources_to_build_dir {
     my ( $self, $module ) = @_;
     my $module_tarball = $module->{tgz};
     my $build_dir      = $self->build_dir;
-
-    my $module_name = $module->{module};
+    my $module_name    = $module->{module};
 
     $module_name =~ s{::}{-}g;
     my $version = $module->{version};
     copy( $module_tarball,
         file( $build_dir, "$module_name-$version.tar.gz" ) );
     copy( $module_tarball, file( $build_dir, "$module_name-$version.tgz" ) );
+
+    #    my $module_file = file($module_tarball)->basename;
+    #    copy( $module_tarball,       file( $build_dir, $module_file ) );
+    #    copy( $module_tarball, file( $build_dir, $module_file ) );
 }
 
 sub package_name {

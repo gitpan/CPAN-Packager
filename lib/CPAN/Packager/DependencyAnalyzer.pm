@@ -47,11 +47,14 @@ has 'dependency_filter' => (
 
 sub analyze_dependencies {
     my ( $self, $module, $dependency_config ) = @_;
-    return if $dependency_config->{modules}->{$module}
+    return
+        if $dependency_config->{modules}->{$module}
             && $dependency_config->{modules}->{$module}->{build_status};
 
     my $resolved_module
         = $self->resolve_module_name( $module, $dependency_config );
+    $resolved_module
+        = $self->fix_module_name( $resolved_module, $dependency_config );
     return
         if $self->is_added($resolved_module)
             || $self->is_core($resolved_module)
@@ -108,8 +111,8 @@ sub is_added {
 sub is_core {
     my ( $self, $module ) = @_;
     return 1 if $module eq 'perl';
-    my $version = Module::CoreList->first_release($_);
-    return 1 if $version;
+    my $corelist = $Module::CoreList::version{$]};
+    return 1 if exists $corelist->{$module};
     return;
 }
 
@@ -118,6 +121,7 @@ sub get_dependencies {
     my $deps = Module::Depends->new->dist_dir($src)->find_modules;
     return grep { !$self->is_added($_) }
         grep    { !$self->is_core($_) }
+        map { $self->fix_module_name( $_, $dependency_config ) }
         map { $self->resolve_module_name( $_, $dependency_config ) } uniq(
         keys %{ $deps->requires || {} },
         keys %{ $deps->build_requires || {} }
@@ -132,6 +136,14 @@ sub resolve_module_name {
     my $resolved_module_name = $self->module_name_resolver->resolve($module);
     return $module unless $resolved_module_name;
     $self->resolved->{$module} = $resolved_module_name;
+}
+
+sub fix_module_name {
+    my ( $self, $module, $config ) = @_;
+    my $new_module_name = $module;
+    $new_module_name = $config->{global}->{fix_module_name}->{$module}
+        if $config->{global}->{fix_module_name}->{$module};
+    $new_module_name;
 }
 
 __PACKAGE__->meta->make_immutable;

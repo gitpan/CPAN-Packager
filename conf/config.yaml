@@ -15,6 +15,10 @@ global:
     - HTTP::Response
     - HTTP::Request
     - Devel::PPPort
+    - IO::stringy
+    - version 
+    - Module::Install
+    - Module::Install::AuthorTests
 
   skip_name_resolve_modules:
     - perl
@@ -24,6 +28,15 @@ global:
     - LWP::UserAgent
     - HTTP::Request
     - HTTP::Response
+    - Date::Parse 
+    - IO::Scalar 
+    - IO::stringy
+
+  fix_module_name:
+#    IO::stringy: IO::Scalar
+
+  fix_package_depends:
+#    IO::Scalar: IO::stringy
 
 modules:
   Test::Exception:
@@ -33,24 +46,36 @@ modules:
       - Test::Builder::Tester
   
   HTTP::Engine:
-    depends:
-      - IO::Stringy
     no_depends:
-      - IO::stringy
       - URI
+      - IO::stringy
+      - IO::Scalar
+
+  Module::Setup:
+    no_depends:
+      - Module::Install::AuthorTests 
   
   Class::Accessor:
     depends:
       - Class::Classgen::Attribute
     no_depends:
       - Class::Classgen::classgen
-  
+
   Class::Trigger:
-    depends:
-      - IO::Stringy
     no_depends:
       - IO::stringy
-  
+      - IO::Scalar
+
+  Log::Dispatch::Config:
+    no_depends:
+      - IO::stringy
+      - IO::Scalar
+ 
+  Getopt::Long::Descriptive:
+    no_depends:
+      - IO::stringy
+      - IO::Scalar
+
   PathTools:
     build_skip: 1
 
@@ -60,9 +85,6 @@ modules:
   namespace::clean:
     no_depends:
       - kurila
-  
-  IO::stringy:
-    build_skip: 1
   
   Class::Classgen::classgen:
     build_skip: 1

@@ -7,7 +7,7 @@ use CPAN::Packager::DependencyConfigMerger;
 use CPAN::Packager::ConfigLoader;
 with 'CPAN::Packager::Role::Logger';
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 BEGIN {
     if ( !defined &DEBUG ) {
@@ -57,14 +57,23 @@ has 'always_build' => (
 sub make {
     my ( $self, $module, $built_modules ) = @_;
     die 'module must be passed' unless $module;
+    $self->log( info => "### Building packages for $module ... ###" );
     my $config = $self->config_loader->load( $self->conf );
     $config->{modules} = $built_modules if $built_modules;
 
     my $modules = $self->analyze_module_dependencies( $module, $config );
     $config = $self->merge_config( $modules, $config )
         if $self->conf;
+
     $self->_dump_modules( $config->{modules} );
-    $built_modules = $self->build_modules( $config->{modules}, $config );
+    eval {
+        $built_modules = $self->build_modules( $config->{modules}, $config );
+    };
+    if ($@) {
+        $self->_dump_modules( $config->{modules} );
+        die "### Built packages for $module faied :-( ###" . $@;
+    }
+    $self->log( info => "### Built packages for $module :-) ### " );
     $built_modules;
 }
 
@@ -84,7 +93,6 @@ sub merge_config {
 sub build_modules {
     my ( $self, $modules, $config ) = @_;
     my $builder_name = $self->builder;
-    $self->log( info => "making packages for $builder_name ..." );
 
     my $builder
         = CPAN::Packager::BuilderFactory->create( $builder_name, $config );
@@ -96,7 +104,7 @@ sub build_modules {
         next if $module->{build_statas};
         next
             if $builder->is_installed( $module->{module} )
-                && $self->always_build;
+                && !$self->always_build;
 
         if ( my $package = $builder->build($module) ) {
             $module->{build_statas} = 'success';

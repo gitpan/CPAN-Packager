@@ -43,5 +43,6 @@ lib/CPAN/Packager/Script.pm
 Makefile.PL
 MANIFEST			This list of files
 META.yml
+patches/cpanflute2_module_build.patch
 README
 t/00_load_all.t
