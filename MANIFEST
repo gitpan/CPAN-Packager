@@ -33,6 +33,7 @@ lib/CPAN/Packager/ConfigLoader.pm
 lib/CPAN/Packager/DependencyAnalyzer.pm
 lib/CPAN/Packager/DependencyConfigMerger.pm
 lib/CPAN/Packager/DependencyFilter/Common.pm
+lib/CPAN/Packager/DependencyFilter/Deb.pm
 lib/CPAN/Packager/DependencyFilter/Role.pm
 lib/CPAN/Packager/DependencyFilter/RPM.pm
 lib/CPAN/Packager/Downloader.pm

@@ -6,6 +6,7 @@ global:
     - Scalar::List::Utils
     - List::Util
     - PathTools 
+    - File::Spec
     - File::Spec::Unix
     - File::Spec::OS2
     - File::Spec::Win32
@@ -13,10 +14,13 @@ global:
     - File::Spec::Functions
     - HTTP::Response
     - HTTP::Request
+    - Devel::PPPort
+
   skip_name_resolve_modules:
     - perl
     - PerlInterp
     - Template
+    - PathTools
     - LWP::UserAgent
     - HTTP::Request
     - HTTP::Response
@@ -48,6 +52,9 @@ modules:
       - IO::stringy
   
   PathTools:
+    build_skip: 1
+
+  File::Spec:
     build_skip: 1
   
   namespace::clean:

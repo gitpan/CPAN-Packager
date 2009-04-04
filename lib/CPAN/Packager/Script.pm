@@ -2,6 +2,7 @@ package CPAN::Packager::Script;
 use Mouse;
 use Pod::Usage;
 use CPAN::Packager;
+use Path::Class;
 
 with 'MouseX::Getopt';
 
@@ -27,17 +28,42 @@ has 'conf' => (
     isa => 'Str',
 );
 
+has 'always_build' => (
+    is      => 'rw',
+    isa     => 'Bool',
+    default => 0,
+);
+
+has 'modulelist' => (
+    is  => 'rw',
+    isa => 'Str',
+);
+
 sub run {
     my $self = shift;
     if ( $self->help ) {
         pod2usage(2);
     }
-    die 'module is required param' unless ( $self->module );
+    die 'conf is required param' unless $self->conf;
+
     my $packager = CPAN::Packager->new(
-        builder => $self->builder,
-        conf    => $self->conf,
+        builder      => $self->builder,
+        conf         => $self->conf,
+        always_build => $self->always_build,
     );
-    $packager->make( $self->module );
+
+    if ( $self->modulelist ) {
+        my @modules = file( $self->modulelist )->slurp( chomp => 1 );
+        @modules = grep { $_ !~ /^#/ } @modules;
+        my $built_modules;
+        foreach my $module (@modules) {
+            $built_modules = $packager->make( $module, $built_modules );
+        }
+    }
+    else {
+        die 'module is required' unless $self->module;
+        $packager->make( $self->module );
+    }
 }
 
 no Mouse;
