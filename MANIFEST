@@ -5,7 +5,8 @@ bugs/issue-cd5e7c7f0ba814e8b6f5259353dbe1891316ca89.yaml
 bugs/issue-e0ab362b2def48c05535373dd377878a3cab0c50.yaml
 bugs/project.yaml
 Changes
-conf/config.yaml
+conf/config-deb.yaml
+conf/config-rpm.yaml
 inc/Module/Install.pm
 inc/Module/Install/AuthorTests.pm
 inc/Module/Install/Base.pm

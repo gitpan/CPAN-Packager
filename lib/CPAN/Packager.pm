@@ -1,13 +1,14 @@
 package CPAN::Packager;
 use 5.00800;
 use Mouse;
+use List::MoreUtils qw/uniq/;
 use CPAN::Packager::DependencyAnalyzer;
 use CPAN::Packager::BuilderFactory;
 use CPAN::Packager::DependencyConfigMerger;
 use CPAN::Packager::ConfigLoader;
 with 'CPAN::Packager::Role::Logger';
 
-our $VERSION = '0.041';
+our $VERSION = '0.05';
 
 BEGIN {
     if ( !defined &DEBUG ) {
@@ -23,6 +24,12 @@ BEGIN {
 has 'builder' => (
     is      => 'rw',
     default => 'Deb',
+);
+
+has 'dry_run' => (
+    is      => 'rw',
+    isa     => 'Bool',
+    default => 0,
 );
 
 has 'conf' => ( is => 'rw', );
@@ -61,20 +68,49 @@ sub make {
     my $config = $self->config_loader->load( $self->conf );
     $config->{modules} = $built_modules if $built_modules;
 
+    $self->log( info => "# Analyzing dependencies for $module ... ###" );
     my $modules = $self->analyze_module_dependencies( $module, $config );
+
     $config = $self->merge_config( $modules, $config )
         if $self->conf;
 
     $self->_dump_modules( $config->{modules} );
-    eval {
-        $built_modules = $self->build_modules( $config->{modules}, $config );
-    };
+    my $sorted_modules = [ uniq reverse @{ $self->topological_sort( $module, $config->{modules} ) } ];
+    $self->_dump_modules( $sorted_modules );
+
+    local $@;
+    unless ( $self->dry_run ) {
+        eval {
+            $built_modules = $self->build_modules( $sorted_modules, $config );
+        };
+    }
+
     if ($@) {
-        $self->_dump_modules( $config->{modules} );
+        $self->_dump_modules( $sorted_modules );
         die "### Built packages for $module faied :-( ###" . $@;
     }
     $self->log( info => "### Built packages for $module :-) ### " );
     $built_modules;
+}
+
+sub topological_sort {
+    my ( $self, $target, $modules ) = @_;
+
+    my @results;
+
+    if ( $modules->{$target} ) {
+        push @results, $modules->{$target};
+        if ( $modules->{$target}->{depends} && @{ $modules->{$target}->{depends} } ) {
+            for my $mod ( @{ $modules->{$target}->{depends} } ) {
+                my $result = $self->topological_sort( $mod, $modules );
+                push @results, @{$result};
+            }
+        }
+    } else {
+        $self->log(info => "skipped $target. no meta data found.");
+    }
+
+    return \@results;
 }
 
 sub _dump_modules {
@@ -98,21 +134,27 @@ sub build_modules {
         = CPAN::Packager::BuilderFactory->create( $builder_name, $config );
     $builder->print_installed_packages;
 
-    for my $module ( values %{$modules} ) {
+    for my $module ( @{$modules} ) {
         next if $module->{build_skip} && $module->{build_skip} == 1;
         next unless $module->{module};
         next if $module->{build_statas};
         next
             if $builder->is_installed( $module->{module} )
                 && !$self->always_build;
-
-        if ( my $package = $builder->build($module) ) {
+        
+        local $@;
+        my $package = $builder->build($module);
+        
+        if ( $package ) {
             $module->{build_statas} = 'success';
             $self->log( info => "$module->{module} created ($package)" );
         }
         else {
             $module->{build_stata} = 'failed';
             $self->log( info => "$module->{module} failed" );
+            if ( $@ ) {
+                die "failed building module: $@";
+            }
         }
     }
     $modules;
@@ -147,6 +189,7 @@ This makes it so easy to make a perl module into a Redhat/Debian package
 =head1 AUTHOR
 
 Takatoshi Kitano E<lt>kitano.tk@gmail.comE<gt>
+walf443
 
 =head1 SEE ALSO
 

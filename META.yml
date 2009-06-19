@@ -27,7 +27,7 @@ requires:
   LWP::UserAgent: 0
   List::Compare: 0
   List::MoreUtils: 0
-  Module::CoreList: 0
+  Module::CoreList: 2.17
   Module::Depends: 0
   Mouse: 0.17
   MouseX::Getopt: 0.04
@@ -36,4 +36,4 @@ requires:
   UNIVERSAL::require: 0
   YAML: 0
   perl: 5.8.0
-version: 0.041
+version: 0.05
