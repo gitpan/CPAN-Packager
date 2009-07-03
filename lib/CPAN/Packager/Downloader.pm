@@ -26,11 +26,12 @@ sub download {
     return () unless $archive;
 
     $archive =~ /([^\/]+)\-([^-]+)\.t(ar\.)?gz$/;
-    my $package_name = $1;
+    my $dist_name = $1;
     my $version      = $2;
 
-    $self->log(info => "Downloaded $module !");
-    ( $archive, $where, $version );
+    $dist_name =~ s/-/::/g;
+    $self->log(info => "Downloaded $module ! dist is $dist_name ");
+    ( $archive, $where, $version, $dist_name );
 }
 
 __PACKAGE__->meta->make_immutable;

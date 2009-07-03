@@ -1,4 +1,4 @@
-package CPAN::Packager::ConfigLoader;
+package CPAN::Packager::Config::Loader;
 use Mouse;
 use YAML;
 use Encode;
@@ -17,6 +17,7 @@ __END__
 
 =head1 NAME
 
+CPAN::Packager::Config::Loader - load config
 
 =head1 SYNOPSIS
 

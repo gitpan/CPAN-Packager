@@ -47,43 +47,65 @@ has 'dependency_filter' => (
 );
 
 sub analyze_dependencies {
-    my ( $self, $module, $dependency_config ) = @_;
-    return
-        if $dependency_config->{modules}->{$module}
-            && $dependency_config->{modules}->{$module}->{build_status};
+    my ( $self, $module, $config ) = @_;
+    return $module
+        if $config->{modules}->{$module}
+            && $config->{modules}->{$module}->{build_status};
 
-    my $skip_name_resolve = $self->_does_skip_resolve_module_name($module, $dependency_config);
-    my $resolved_module
-        = $skip_name_resolve ? $module : $self->resolve_module_name( $module, $dependency_config );
-    $resolved_module = $self->fix_module_name( $resolved_module, $dependency_config );
+    my $resolved_module = $self->resolve_module_name( $module, $config );
+    $resolved_module = $self->fix_module_name( $resolved_module, $config );
 
-    return unless $self->_is_needed_to_analyze_dependencies($resolved_module);
+    return $resolved_module unless $self->_is_needed_to_analyze_dependencies($resolved_module);
 
-    my $module_name_to_download
-        = $self->_module_name_to_download( $module, $resolved_module,$dependency_config );
+    my $custom_src = $config->{modules}->{$module}->{custom_src};
+    my ( $tgz, $src, $version, $dist ) = $self->download_module($resolved_module, $config);
 
-    my $custom_src = $dependency_config->{modules}->{$module}->{custom_src};
-    my ( $tgz, $src, $version )
-        = $custom_src ? map { $_ =~ s/^~/$ENV{HOME}/; $_ } @{ $custom_src } : $self->downloader->download($module_name_to_download);
+    $resolved_module = $dist ? $dist : $resolved_module;
 
-    my @depends = $self->get_dependencies( $module, $src, $dependency_config);
-    @depends
-        = $self->dependency_filter->filter_dependencies( $resolved_module,
-        \@depends, $dependency_config );
-
-    $self->modules->{$module} = {
+    my @depends = $self->get_dependencies( $resolved_module, $src, $config);
+    $self->modules->{$resolved_module} = {
         module               => $resolved_module,
         original_module_name => $module,
-        skip_name_resolve    => $skip_name_resolve,
+        skip_name_resolve    => $self->_does_skip_resolve_module_name($module, $config),
         version              => $version,
         tgz                  => $tgz,
         src                  => $src,
         depends              => \@depends,
     };
 
+    my @new_depends;
     for my $depend_module (@depends) {
-        $self->analyze_dependencies( $depend_module, $dependency_config );
+        my $new_name = $self->analyze_dependencies( $depend_module, $config );
+        push @new_depends, $new_name;
     }
+
+    @new_depends 
+        = $self->dependency_filter->filter_dependencies( $resolved_module, \@new_depends, $config );
+
+    # fix depends to resolved module name.
+    $self->modules->{$resolved_module}->{depends} = \@new_depends;
+
+    return $resolved_module;
+}
+
+sub download_module {
+    my ( $self, $module, $config ) = @_;
+
+    $self->{__downloaded} ||= {};
+
+    unless ( $self->{__downloaded}->{$module} ) {
+        my $custom_src = $config->{modules}->{$module}->{custom_src};
+        $self->{__downloaded}->{$module} = [ 
+            $custom_src ? 
+                map { 
+                    my $mod = shift; $mod =~ s/^~/$ENV{HOME}/; $mod 
+                } @{ $custom_src } : 
+                $self->downloader->download($module) 
+        ];
+    }
+
+    return @{ $self->{__downloaded}->{$module} } if $self->{__downloaded}->{$module};
+
 }
 
 sub _is_needed_to_analyze_dependencies {
@@ -96,24 +118,12 @@ sub _is_needed_to_analyze_dependencies {
 }
 
 sub _does_skip_resolve_module_name {
-    my ($self, $module, $dependency_config) = @_;
+    my ($self, $module, $config) = @_;
     my @skip_name_resolve_modules
-        = @{ $dependency_config->{global}->{skip_name_resolve_modules}
+        = @{ $config->{global}->{skip_name_resolve_modules}
             || () };
     my $skip_name_resolve = any { $_ eq $module } @skip_name_resolve_modules;
     return $skip_name_resolve;
-}
-
-sub _module_name_to_download {
-    my ( $self, $original_module_name, $resolved_module_name,
-        $dependency_config )
-        = @_;
-    my @skip_name_resolve_modules
-        = @{ $dependency_config->{global}->{skip_name_resolve_modules}
-            || () };
-    return $original_module_name
-        if any { $_ eq $original_module_name } @skip_name_resolve_modules;
-    return $resolved_module_name;
 }
 
 sub is_added {
@@ -131,28 +141,30 @@ sub is_core {
 }
 
 sub get_dependencies {
-    my ( $self, $module, $src, $dependency_config ) = @_;
-    if ( $dependency_config->{modules} && $dependency_config->{modules}->{$module} && $dependency_config->{modules}->{$module}->{depends} ) {
-        return @{ $dependency_config->{modules}->{$module}->{depends} };
+    my ( $self, $module, $src, $config ) = @_;
+    if ( $config->{modules} && $config->{modules}->{$module} && $config->{modules}->{$module}->{depends} ) {
+        return @{ $config->{modules}->{$module}->{depends} };
     }
 
-    my $make_yml_generate_fg = any { $_ eq $module } @{ $dependency_config->{global}->{fix_meta_yml_modules} || [] };
+    my $make_yml_generate_fg = any { $_ eq $module } @{ $config->{global}->{fix_meta_yml_modules} || [] };
 
     my $depends_mod = $make_yml_generate_fg ? "Module::Depends::Intrusive" : "Module::Depends";
     my $deps = $depends_mod->new->dist_dir($src)->find_modules;
 
     return grep { !$self->is_added($_) }
         grep    { !$self->is_core($_) }
-        map { $self->fix_module_name( $_, $dependency_config ) }
-        map { $self->resolve_module_name( $_, $dependency_config ) } uniq(
+        map { $self->fix_module_name( $_, $config ) }
+        map { $self->resolve_module_name( $_, $config ) } uniq(
         keys %{ $deps->requires || {} },
         keys %{ $deps->build_requires || {} }
         );
 }
 
 sub resolve_module_name {
-    my ( $self, $module, $dependency_config ) = @_;
+    my ( $self, $module, $config ) = @_;
+
     return $self->resolved->{$module} if $self->resolved->{$module};
+    return $module if $self->_does_skip_resolve_module_name($module, $config);
 
     my $resolved_module_name = $self->module_name_resolver->resolve($module);
     return $module unless $resolved_module_name;
