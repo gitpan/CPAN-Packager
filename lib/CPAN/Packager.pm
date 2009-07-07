@@ -4,12 +4,12 @@ use Mouse;
 use List::MoreUtils qw/uniq/;
 use CPAN::Packager::DependencyAnalyzer;
 use CPAN::Packager::BuilderFactory;
-use CPAN::Packager::DependencyConfigMerger;
+use CPAN::Packager::Config::Merger;
 use CPAN::Packager::Config::Loader;
 use CPAN::Packager::Util;
 with 'CPAN::Packager::Role::Logger';
 
-our $VERSION = '0.053';
+our $VERSION = '0.054';
 
 BEGIN {
     if ( !defined &DEBUG ) {
@@ -38,7 +38,7 @@ has 'conf' => ( is => 'rw', );
 has 'dependency_config_merger' => (
     is      => 'rw',
     default => sub {
-        CPAN::Packager::DependencyConfigMerger->new;
+        CPAN::Packager::Config::Merger->new;
     }
 );
 
@@ -71,6 +71,8 @@ sub make {
 
     $self->log( info => "# Analyzing dependencies for $module ... ###" );
     my ( $modules, $resolved_module_name) = $self->analyze_module_dependencies( $module, $config );
+
+    $modules->{$resolved_module_name}->{force_build} = 1; # always build target module.
 
     $config = $self->merge_config( $modules, $config )
         if $self->conf;

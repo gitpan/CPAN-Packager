@@ -33,10 +33,10 @@ lib/CPAN/Packager/Builder/Role.pm
 lib/CPAN/Packager/Builder/RPM.pm
 lib/CPAN/Packager/BuilderFactory.pm
 lib/CPAN/Packager/Config/Loader.pm
+lib/CPAN/Packager/Config/Merger.pm
 lib/CPAN/Packager/Config/Schema.pm
 lib/CPAN/Packager/Config/Validator.pm
 lib/CPAN/Packager/DependencyAnalyzer.pm
-lib/CPAN/Packager/DependencyConfigMerger.pm
 lib/CPAN/Packager/DependencyFilter/Common.pm
 lib/CPAN/Packager/DependencyFilter/Deb.pm
 lib/CPAN/Packager/DependencyFilter/Role.pm

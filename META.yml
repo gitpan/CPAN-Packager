@@ -42,4 +42,4 @@ requires:
   YAML: 0
   perl: 5.8.0
 tests: 't/*.t t/0*/*.t xt/*.t'
-version: 0.053
+version: 0.054
