@@ -40,7 +40,16 @@ CPAN::Packager::Config::Schema - configuration schema
               - type: str
                 unique: yes
           "fix_package_depends":
-            type: any
+            type: seq
+            sequence:
+              - type: map
+                mapping:
+                  from:
+                    type: str
+                    required: true 
+                  to:
+                    type: str
+                    required: true 
           "no_depends":
             type: seq
             sequence:
@@ -53,8 +62,12 @@ CPAN::Packager::Config::Schema - configuration schema
           "skip_name_resolve_modules":
             type: seq
             sequence:
-              - type: str
-                unique: yes
+              - type: map
+                mapping:
+                  "module":
+                    type: str
+                    unique: yes
+                    required: true
           "fix_module_name":
             type: seq
             sequence:
@@ -73,8 +86,8 @@ CPAN::Packager::Config::Schema - configuration schema
             mapping:
               "module":
                 type: str
+                required: true
                 unique: yes
-                required: true 
               "no_depends":
                 type: seq
                 sequence:
@@ -99,6 +112,12 @@ CPAN::Packager::Config::Schema - configuration schema
                 type: bool
               "force_build":
                 type: bool
+              "custom_src":
+                type: seq
+                sequence:
+                  - type: any
+              "version":
+                type: any
 
 =head1 AUTHOR
 

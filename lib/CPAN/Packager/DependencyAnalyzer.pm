@@ -68,7 +68,7 @@ sub analyze_dependencies {
         $resolved_module = $self->resolve_module_name( $module, $config ) ;
     }
 
-    return $resolved_module unless $self->_is_needed_to_analyze_dependencies($resolved_module);
+    return $resolved_module unless $self->_is_needed_to_analyze_dependencies($resolved_module, $config);
 
     unless ( $dist ) {
         ( $tgz, $src, $version, $dist ) = $self->download_module($resolved_module, $config);
@@ -108,13 +108,23 @@ sub download_module {
 
     unless ( $self->{__downloaded}->{$module} ) {
         my $custom_src = $config->{modules}->{$module}->{custom_src};
-        $self->{__downloaded}->{$module} = [ 
-            $custom_src ? 
+        if ( $custom_src ) {
+            $self->{__downloaded}->{$module} = [
                 map { 
-                    my $mod = shift; $mod =~ s/^~/$ENV{HOME}/; $mod 
-                } @{ $custom_src } : 
-                $self->downloader->download($module) 
-        ];
+                    my $mod = $_; 
+                    $mod =~ s/^~/$ENV{HOME}/; 
+                    $mod; 
+                } @{ $custom_src }
+            ];
+        } else {
+            if ( my $version = $config->{modules}->{$module}->{version} ) {
+                my $dist_with_version = "$module-$version";
+                $dist_with_version =~ s/::/-/g;
+                $self->{__downloaded}->{$module} = [ $self->downloader->download($dist_with_version) ];
+            } else {
+                $self->{__downloaded}->{$module} = [ $self->downloader->download($module) ];
+            }
+        }
     }
 
     return @{ $self->{__downloaded}->{$module} } if $self->{__downloaded}->{$module};
@@ -122,11 +132,12 @@ sub download_module {
 }
 
 sub _is_needed_to_analyze_dependencies {
-    my ($self, $resolved_module) = @_;
+    my ($self, $resolved_module, $config) = @_;
     return 0 if $self->is_added($resolved_module);
     return 0 if $self->is_core($resolved_module);
     return 0 if $resolved_module eq 'perl';
     return 0 if $resolved_module eq 'PerlInterp';
+    return 0 if $config->{modules}->{$resolved_module}->{skip_build};
     return 1;
 }
 
@@ -135,7 +146,7 @@ sub _does_skip_resolve_module_name {
     my @skip_name_resolve_modules
         = @{ $config->{global}->{skip_name_resolve_modules}
             || () };
-    my $skip_name_resolve = any { $_ eq $module } @skip_name_resolve_modules;
+    my $skip_name_resolve = any { $_->{module} eq $module } @skip_name_resolve_modules;
     return $skip_name_resolve;
 }
 
@@ -156,7 +167,7 @@ sub is_core {
 sub get_dependencies {
     my ( $self, $module, $src, $config ) = @_;
     if ( $config->{modules} && $config->{modules}->{$module} && $config->{modules}->{$module}->{depends} ) {
-        return @{ $config->{modules}->{$module}->{depends} };
+        return map { $_->{module} } @{ $config->{modules}->{$module}->{depends} };
     }
 
     my $make_yml_generate_fg = any { $_ eq $module } @{ $config->{global}->{fix_meta_yml_modules} || [] };

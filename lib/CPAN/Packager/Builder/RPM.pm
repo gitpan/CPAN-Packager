@@ -66,6 +66,8 @@ sub generate_spec_file {
     my $spec_file_name = $self->package_name( $module->{module} ) . ".spec";
     $spec_content
         = $self->filter_spec_file( $spec_content, $module->{module} );
+
+    $self->log( info => ">>> generated specfile : \n $spec_content" );
     $self->create_spec_file( $spec_content, $spec_file_name );
     ( $spec_file_name, $spec_content );
 }
@@ -85,6 +87,7 @@ sub generate_spec_with_cpanflute {
     my $copy_to = file( $self->build_dir, "$module_name-$version.tar.gz" );
     copy( $module->{tgz}, $copy_to );
     my $spec = capture("LANG=C cpanflute2 $opts $copy_to");
+    $self->log( info => '>>> generated specfile for ' . $tgz );
 
     $spec;
 }
@@ -171,7 +174,7 @@ sub _filter_global_requires_for_rpmbuild {
 sub _filter_global_requires_for_spec {
     my ( $self, $spec_content ) = @_;
     foreach my $ignore ( @{ $self->config( global => 'no_depends' ) } ) {
-        $spec_content = $self->_filter_requires( $spec_content, $ignore );
+        $spec_content = $self->_filter_requires( $spec_content, $ignore->{module} );
     }
     $spec_content;
 }
@@ -188,9 +191,9 @@ sub _fix_requires {
     my $fix_package_depends
         = $self->config( global => 'fix_package_depends' );
 
-    foreach my $module ( keys %{$fix_package_depends} ) {
+    foreach my $module (@$fix_package_depends ) {
         $spec_content
-            =~ s/^Requires: perl\($module\).*?$/Requires: perl\($fix_package_depends->{$module}\)/mg;
+            =~ s/^Requires: perl\($module->{from}\).*?$/Requires: perl\($module->{to}\)/mg;
     }
     $spec_content;
 }
@@ -300,7 +303,9 @@ sub build_rpm_package {
         if &CPAN::Packager::DEBUG;
     my $result = capture( EXIT_ANY,
         "env PERL_MM_USE_DEFAULT=1 LANG=C rpmbuild $build_opt" );
+
     $self->log( debug => $result ) if &CPAN::Packager::DEBUG;
+    $self->log( info => '>>> finished builidng rpm pacckage for ' . $spec_file_name );
     $result;
 }
 

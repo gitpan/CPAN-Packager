@@ -9,7 +9,7 @@ use CPAN::Packager::Config::Loader;
 use CPAN::Packager::Util;
 with 'CPAN::Packager::Role::Logger';
 
-our $VERSION = '0.054';
+our $VERSION = '0.06';
 
 BEGIN {
     if ( !defined &DEBUG ) {
@@ -69,7 +69,7 @@ sub make {
     my $config = $self->config_loader->load( $self->conf );
     $config->{modules} = $built_modules if $built_modules;
 
-    $self->log( info => "# Analyzing dependencies for $module ... ###" );
+    $self->log( info => "### Analyzing dependencies for $module ... ###" );
     my ( $modules, $resolved_module_name) = $self->analyze_module_dependencies( $module, $config );
 
     $modules->{$resolved_module_name}->{force_build} = 1; # always build target module.
@@ -124,7 +124,7 @@ sub build_modules {
     $builder->print_installed_packages;
 
     for my $module ( @{$modules} ) {
-        next if $module->{build_skip} && $module->{build_skip} == 1;
+        next if $module->{skip_build} && $module->{skip_build} == 1;
         next unless $module->{module};
         next if $module->{build_status};
         next
