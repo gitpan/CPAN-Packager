@@ -23,15 +23,6 @@ Then install it:
 
     % make install
 
-Patches
-==========
-CPAN::Packager uses cpanflute2 to build rpm.
-but it has the bug which cpanflute2 doesnt build the module which use Build.PL.
-Please apply the patch below if you need to build the module which uses Build.PL
-
-    github.com/dann/p5-cpan-packager/master
-      patches/cpanflute2_module_build.patch
-
 How to use
 ===========
 case1: build a module
@@ -49,7 +40,7 @@ options
     --always-build   always build cpan modules if module is aready installed (optional)
     --modulelist     File containing a list of modules that should be built. (optional)
 
-RPM/Deb Packages are generated at /tmp/cpanpackager/{deb or rpm}
+RPM/Deb Packages are generated at ~/.cpanpackager/{deb or rpm}
 
 config.yaml is located at github repo.
 
@@ -86,10 +77,31 @@ after that you just use cpan-packager ;)
       cpan_mirrors:
         - file:///home/dann/minicpan
 
-Author
-======
+Additional setup (For debian and ubuntu users)
+===================================
+Copy conf/debian/rules* to ~/.dh-make-perl directory.
+copying perllocal.pod is conflited if you dont do that. 
 
-Takatoshi Kitano
-techmemo@gmail.com
+DESCRIPTION
+===========
+cpan-packager will create the files required to build a debian or redhat source 
+package out of a perl package. This works for most simple packages and is also 
+useful for getting started with packaging perl modules. Given a perl package name, 
+it can also automatically download it from CPAN. 
+
+BUGS
+====
+Please report any bugs or feature requests to "<bug-CPAN-Packagerat rt.cpan.org>", or through
+the web interface at <http://rt.cpan.org/NoAuth/ReportBug.html?Queue=CPAN-Packager>.  I will be
+notified, and then you’ll automatically be notified of progress on your bug as I make changes.
+
+AUTHOR
+======
+Takatoshi Kitano E<lt>kitano.tk@gmail.comE<gt>
 
 special thanks: walf443
+
+SEE ALSO
+========
+"CPAN::Packager" development takes place at <http://github.com/dann/p5-cpan-packager/tree/master>
+

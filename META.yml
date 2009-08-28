@@ -23,6 +23,14 @@ no_index:
     - inc
     - t
     - xt
+recommends:
+  Archive::Tar: 0
+  Cwd: 0
+  File::Basename: 0
+  File::Copy: 0
+  File::Temp: 0
+  RPM::Specfile: 0
+  URI::Escape: 0
 requires:
   CPANPLUS::Backend: 0
   Class::Inspector: 0
@@ -41,10 +49,9 @@ requires:
   MouseX::Getopt: 0.04
   Path::Class: 0
   Pod::POM: 0
-  RPM::Specfile: 0
   UNIVERSAL::require: 0
   YAML: 0
   perl: 5.8.0
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.063
+version: 0.064

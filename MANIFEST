@@ -7,7 +7,12 @@ bugs/project.yaml
 Changes
 conf/config-deb.yaml
 conf/config-rpm.yaml
-conf/modulelist_sample.txt
+conf/debian/README
+conf/debian/rules.MakeMaker.noxs
+conf/debian/rules.MakeMaker.xs
+conf/debian/rules.Module-Build.noxs
+conf/debian/rules.Module-Build.xs
+conf/modules.list
 inc/Module/Install.pm
 inc/Module/Install/AuthorTests.pm
 inc/Module/Install/Base.pm
@@ -33,6 +38,7 @@ lib/CPAN/Packager.pm
 lib/CPAN/Packager/Builder/Deb.pm
 lib/CPAN/Packager/Builder/Role.pm
 lib/CPAN/Packager/Builder/RPM.pm
+lib/CPAN/Packager/Builder/RPM/Spec.pm
 lib/CPAN/Packager/BuilderFactory.pm
 lib/CPAN/Packager/Config/Loader.pm
 lib/CPAN/Packager/Config/Merger.pm
@@ -44,6 +50,7 @@ lib/CPAN/Packager/DependencyFilter/Deb.pm
 lib/CPAN/Packager/DependencyFilter/Role.pm
 lib/CPAN/Packager/DependencyFilter/RPM.pm
 lib/CPAN/Packager/Downloader.pm
+lib/CPAN/Packager/Home.pm
 lib/CPAN/Packager/ModuleNameResolver.pm
 lib/CPAN/Packager/Role/Logger.pm
 lib/CPAN/Packager/Script.pm
@@ -51,7 +58,6 @@ lib/CPAN/Packager/Util.pm
 Makefile.PL
 MANIFEST			This list of files
 META.yml
-patches/cpanflute2_module_build.patch
 README
 README.md
 t/00_load_all.t
