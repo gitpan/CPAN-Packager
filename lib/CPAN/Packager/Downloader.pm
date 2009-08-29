@@ -1,7 +1,7 @@
 package CPAN::Packager::Downloader;
 use Mouse;
 use CPANPLUS::Backend;
-use Path::Class;
+use Path::Class qw(file dir);
 use URI;
 with 'CPAN::Packager::Role::Logger';
 
@@ -49,9 +49,15 @@ sub download {
 
     $dist_name =~ s/-/::/g;
     $self->log( info => "Downloaded $module ! dist is $dist_name " );
-    return { tgz_path => $archive, src_dir => $where, version => $version, dist_name => $dist_name}; 
+    return {
+        tgz_path  => $archive,
+        src_dir   => $where,
+        version   => $version,
+        dist_name => $dist_name
+    };
 }
 
+no Mouse;
 __PACKAGE__->meta->make_immutable;
 1;
 
@@ -63,9 +69,13 @@ CPAN::Packager::Downloader - Download cpan module tarball from CPAN
 
 =head1 SYNOPSIS
 
+  use CPAN::Packager::Downloader;
+  my $d = CPAN::Packager::Downloader;
+  $d->download('HTTP::Engine');
 
 =head1 DESCRIPTION
 
+CPAN::Packager::Downloader fetches a cpan module tarball from CPAN.
 
 =head1 AUTHOR
 

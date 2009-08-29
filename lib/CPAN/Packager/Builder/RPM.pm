@@ -5,7 +5,6 @@ use Path::Class qw(file dir);
 use RPM::Specfile;
 use IPC::System::Simple qw(system capture EXIT_ANY);
 use File::Temp qw(tempdir);
-use LWP::Simple;
 use File::Copy;
 use CPAN::Packager::Home;
 use CPAN::Packager::Builder::RPM::Spec;
@@ -376,7 +375,7 @@ __END__
 
 =head1 NAME
 
-CPAN::Package::Builder::RPM - RPM package builder
+CPAN::Packager::Builder::RPM - RPM package builder
 
 =head1 SYNOPSIS
 
