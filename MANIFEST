@@ -42,6 +42,7 @@ lib/CPAN/Packager/Builder/RPM/Spec.pm
 lib/CPAN/Packager/BuilderFactory.pm
 lib/CPAN/Packager/Config/Loader.pm
 lib/CPAN/Packager/Config/Merger.pm
+lib/CPAN/Packager/Config/Replacer.pm
 lib/CPAN/Packager/Config/Schema.pm
 lib/CPAN/Packager/Config/Validator.pm
 lib/CPAN/Packager/DependencyAnalyzer.pm
@@ -50,6 +51,7 @@ lib/CPAN/Packager/DependencyFilter/Deb.pm
 lib/CPAN/Packager/DependencyFilter/Role.pm
 lib/CPAN/Packager/DependencyFilter/RPM.pm
 lib/CPAN/Packager/Downloader.pm
+lib/CPAN/Packager/Extractor.pm
 lib/CPAN/Packager/Home.pm
 lib/CPAN/Packager/ModuleNameResolver.pm
 lib/CPAN/Packager/Role/Logger.pm
