@@ -53,6 +53,7 @@ lib/CPAN/Packager/DependencyFilter/RPM.pm
 lib/CPAN/Packager/Downloader.pm
 lib/CPAN/Packager/Extractor.pm
 lib/CPAN/Packager/Home.pm
+lib/CPAN/Packager/JA.pod
 lib/CPAN/Packager/ModuleNameResolver.pm
 lib/CPAN/Packager/Role/Logger.pm
 lib/CPAN/Packager/Script.pm
