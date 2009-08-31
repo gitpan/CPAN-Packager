@@ -7,7 +7,10 @@ bugs/project.yaml
 Changes
 conf/config-deb.yaml
 conf/config-rpm.yaml
+conf/debian/overrides
 conf/debian/README
+conf/debian/rules.dh7.noxs
+conf/debian/rules.dh7.xs
 conf/debian/rules.MakeMaker.noxs
 conf/debian/rules.MakeMaker.xs
 conf/debian/rules.Module-Build.noxs

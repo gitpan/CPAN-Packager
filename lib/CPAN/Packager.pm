@@ -9,7 +9,7 @@ use CPAN::Packager::Config::Loader;
 use CPAN::Packager::Util;
 with 'CPAN::Packager::Role::Logger';
 
-our $VERSION = '0.073';
+our $VERSION = '0.074';
 
 BEGIN {
     if ( !defined &DEBUG ) {
@@ -129,7 +129,12 @@ sub build_modules {
         next if $module->{build_status};
         next
             if $builder->is_installed( $module->{module} )
-                && !$self->always_build;
+                && !$self->always_build && !$module->{force_build};
+
+        # FIXME: RPM is not consider force_build setting.
+        if ( $self->always_build ) {
+            $module->{force_build} = 1; # afffect force_build flag.
+        }
 
         local $@;
         my $package = $builder->build($module);
