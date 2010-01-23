@@ -2,7 +2,9 @@
 global:
   cpan_mirrors:
     - file:///home/dann/.cpanpackager/minicpan/
-  fix_module_name: []
+  fix_module_name:
+    - from: Class::Classgen::classgen
+      to: Class::Classgen::Attribute
   fix_package_depends: []
   no_depends:
     # default
@@ -41,6 +43,7 @@ global:
     - module: Devel::PPPort
     - module: Encode
     - module: ExtUtils::MakeMaker
+    - module: ExtUtils::Install
     - module: 'Filter # brokes?'
     - module: HTTP::Request
     - module: HTTP::Response
@@ -62,8 +65,12 @@ modules:
   - module: Test::Exception
     depends:
       - module: Test::Simple
+      - module: Sub::Uplevel
     no_depends:
       - module: Test::Builder::Tester
+    skip_test: 1
+  - module: Sub::Uplevel 
+    skip_test: 1
   - module: FindBin::libs
     skip_test: 1
   - module: HTTP::Request::AsCGI

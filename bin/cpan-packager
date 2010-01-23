@@ -17,11 +17,11 @@ cpan-packager -  create redhat/debian packages from perl modules
 
 case1: build a module
 
-    sudo cpan-packager --module Test::Exception --builder Deb --conf conf/config.yaml 
+    sudo cpan-packager --module Test::Exception --builder Deb --conf conf/config.yaml --verbose
 
 case2: build multiple modules at a time 
 
-    sudo cpan-packager --modulelist modules.list --builder RPM --conf conf/config.yaml 
+    sudo cpan-packager --modulelist modulelist.txt --builder RPM --conf conf/config.yaml --verbose
 
 options
     --module         module name (required option)
@@ -29,6 +29,7 @@ options
     --conf           configuration file path (required)
     --always-build   always build cpan modules if module is aready installed (optional)
     --modulelist     File containing a list of modules that should be built. (optional)
+    --verbose        print command result (optional)
 
 RPM/Deb Packages are generated at ~/.cpanpackager/{deb or rpm}
 
@@ -70,6 +71,28 @@ after that you just use cpan-packager ;)
       cpan_mirrors:
         - file:///home/dann/minicpan
 
+=head2 Specify installation location (optional)
+
+It is possible for a CPAN::Packager user to explicitly specify 
+installation locations for a distribution's
+libraries, documentation, man pages, binaries, and scripts. Setting
+both of the below environment variables, for example, will accomplish
+this.
+
+    PERL_MM_OPT="INSTALLVENDORMAN1DIR=/usr/local/share/man/man1
+    INSTALLVENDORMAN3DIR=/usr/local/share/man/man3
+    INSTALLVENDORBIN=/usr/local/bin INSTALLVENDORSCRIPT=/usr/local/bin"
+
+    PERL_MB_OPT="--config installvendorman1dir=/usr/local/share/man/man1
+    --config installvendorman3dir=/usr/local/share/man/man3 --config
+    installvendorbin=/usr/local/bin --config
+    installvendorscript=/usr/local/bin"
+
+Additionally, for RPMs, you may specify the directory in which non-man
+documentation (Changes, README, etc) are installed via adding an entry
+to your ~/.rpmmacros file:
+
+%_defaultdocdir /usr/local/share/doc
 
 =head2 Additional setup (For debian users)
 
@@ -92,10 +115,6 @@ notified, and then you’ll automatically be notified of progress on your bug as
 =head1 AUTHOR
 
 Takatoshi Kitano E<lt>kitano.tk@gmail.comE<gt>
-
-=head1 SEE ALSO
-
-"CPAN::Packager" development takes place at <http://github.com/dann/p5-cpan-packager/tree/master>
 
 =head1 LICENSE
 

@@ -3,20 +3,17 @@ use Mouse;
 use Module::Depends;
 use Module::Depends::Intrusive;
 use Module::CoreList;
-use CPAN::Packager::Downloader;
 use CPAN::Packager::ModuleNameResolver;
 use CPAN::Packager::DependencyFilter::Common;
 use List::Compare;
 use CPAN::Packager::Config::Replacer;
 use CPAN::Packager::Extractor;
 use List::MoreUtils qw(uniq any);
+use FileHandle;
 with 'CPAN::Packager::Role::Logger';
 
 has 'downloader' => (
     is      => 'rw',
-    default => sub {
-        CPAN::Packager::Downloader->new;
-    }
 );
 
 has 'extractor' => (
@@ -196,7 +193,21 @@ sub is_core {
     my ( $self, $module ) = @_;
     return 1 if $module eq 'perl';
     my $corelist = $Module::CoreList::version{$]};
-    return 1 if exists $corelist->{$module};
+
+    # return true only if this is a dual life core module
+    if (exists $corelist->{$module}) {
+        my $devnull_fh = FileHandle->new('/dev/null', 'w');
+        my $real_fh = $CPANPLUS::Error::ERROR_FH;
+
+        $CPANPLUS::Error::ERROR_FH = $devnull_fh;
+        my $mod = $self->downloader->fetcher->parse_module(module => $module);
+        $CPANPLUS::Error::ERROR_FH = $real_fh;
+        return 1 unless defined $mod;
+
+        my $pkg = $mod->package;
+        return 1 if $pkg =~ /^perl-?\d\.\d/;
+    }
+
     return;
 }
 

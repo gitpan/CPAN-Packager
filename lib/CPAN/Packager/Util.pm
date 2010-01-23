@@ -5,6 +5,10 @@ use Class::Inspector;
 use Pod::POM ();
 use List::Util qw/first/;
 use YAML;
+use IPC::Cmd qw(run);
+
+our $DEFAULT_COMMAND_TIMEOUT = 30 * 60;
+our $DEFAULT_VERVOSE_MODE    = 0;
 
 sub topological_sort {
     my ( $target, $modules ) = @_;
@@ -16,11 +20,13 @@ sub topological_sort {
             && @{ $modules->{$target}->{depends} } )
         {
             for my $mod ( @{ $modules->{$target}->{depends} } ) {
+
                 # ex) fix for List::AllUtils
-                if($mod eq $target) {
+                if ( $mod eq $target ) {
                     next;
                 }
-                my $result = CPAN::Packager::Util::topological_sort( $mod, $modules );
+                my $result = CPAN::Packager::Util::topological_sort( $mod,
+                    $modules );
                 push @results, @{$result};
             }
         }
@@ -37,14 +43,61 @@ sub get_schema_from_pod {
     my $proto = ref $target || $target;
 
     my $parser = Pod::POM->new;
-    my $pom = $parser->parse(Class::Inspector->resolved_filename($proto));
-    if (my $schema_node = first { $_->title eq 'SCHEMA' } $pom->head1) {
+    my $pom = $parser->parse( Class::Inspector->resolved_filename($proto) );
+    if ( my $schema_node = first { $_->title eq 'SCHEMA' } $pom->head1 ) {
         my $schema_content = $schema_node->content;
         $schema_content =~ s/^    //gm;
         my $schema = YAML::Load($schema_content);
         return $schema;
-    } else {
-        return; # 404 schema not found.
+    }
+    else {
+        return;    # 404 schema not found.
+    }
+}
+
+sub run_command {
+    my ( $cmd, $verbose, $timeout ) = @_;
+
+    $verbose ||= $DEFAULT_VERVOSE_MODE;
+    $timeout ||= $DEFAULT_COMMAND_TIMEOUT;
+    my $buffer;
+    if (scalar run(
+            command => $cmd,
+            verbose => $verbose,
+            buffer  => \$buffer,
+            timeout => $timeout,
+        )
+        )
+    {
+        print "success: $cmd\n";
+        return 0;
+    }
+    else {
+        print "failed: $buffer\n";
+        return 1;
+    }
+}
+
+sub capture_command {
+    my ( $cmd, $verbose, $timeout ) = @_;
+
+    $verbose ||= $DEFAULT_VERVOSE_MODE;
+    $timeout ||= $DEFAULT_COMMAND_TIMEOUT;
+    my $buffer;
+    if (scalar run(
+            command => $cmd,
+            verbose => $verbose,
+            buffer  => \$buffer,
+            timeout => $timeout,
+        )
+        )
+    {
+        print "success: $buffer\n" if $verbose;
+        return $buffer;
+    }
+    else {
+        print "failed: $buffer\n" if $verbose;
+        return $buffer;
     }
 }
 

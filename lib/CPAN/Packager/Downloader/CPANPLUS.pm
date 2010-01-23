@@ -1,9 +1,12 @@
-package CPAN::Packager::Downloader;
+package CPAN::Packager::Downloader::CPANPLUS;
 use Mouse;
 use CPANPLUS::Backend;
 use Path::Class qw(file dir);
 use URI;
+use File::Basename;
+use CPAN::DistnameInfo;
 with 'CPAN::Packager::Role::Logger';
+with 'CPAN::Packager::Downloader::Role';
 
 has 'fetcher' => (
     is      => 'rw',
@@ -43,9 +46,10 @@ sub download {
 
     return () unless $archive;
 
-    $archive =~ /([^\/]+)\-([^-]+)\.t(ar\.)?gz$/;
-    my $dist_name = $1;
-    my $version   = $2;
+    my $basename  = fileparse($archive);
+    my $distro    = CPAN::DistnameInfo->new($basename);
+    my $dist_name = $distro->dist;
+    my $version   = $distro->version;
 
     $dist_name =~ s/-/::/g;
     $self->log( info => "Downloaded $module ! dist is $dist_name " );
@@ -65,12 +69,12 @@ __END__
 
 =head1 NAME
 
-CPAN::Packager::Downloader - Download cpan module tarball from CPAN
+CPAN::Packager::Downloader::CPANPLUS - Download cpan module tarball from CPAN with CPANPLUS
 
 =head1 SYNOPSIS
 
-  use CPAN::Packager::Downloader;
-  my $d = CPAN::Packager::Downloader;
+  use CPAN::Packager::Downloader::CPANPLUS;
+  my $d = CPAN::Packager::Downloader::CPANPLUS->new;
   $d->download('HTTP::Engine');
 
 =head1 DESCRIPTION

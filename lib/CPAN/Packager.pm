@@ -4,12 +4,13 @@ use Mouse;
 use List::MoreUtils qw/uniq/;
 use CPAN::Packager::DependencyAnalyzer;
 use CPAN::Packager::BuilderFactory;
+use CPAN::Packager::DownloaderFactory;
 use CPAN::Packager::Config::Merger;
 use CPAN::Packager::Config::Loader;
 use CPAN::Packager::Util;
 with 'CPAN::Packager::Role::Logger';
 
-our $VERSION = '0.074';
+our $VERSION = '0.081';
 
 BEGIN {
     if ( !defined &DEBUG ) {
@@ -25,6 +26,11 @@ BEGIN {
 has 'builder' => (
     is      => 'rw',
     default => 'Deb',
+);
+
+has 'downloader' => (
+    is      => 'rw',
+    default => 'CPANPLUS',
 );
 
 has 'dry_run' => (
@@ -49,12 +55,7 @@ has 'config_loader' => (
     }
 );
 
-has 'dependency_analyzer' => (
-    is      => 'rw',
-    default => sub {
-        CPAN::Packager::DependencyAnalyzer->new;
-    }
-);
+has 'dependency_analyzer' => ( is => 'rw', );
 
 has 'always_build' => (
     is      => 'rw',
@@ -62,17 +63,44 @@ has 'always_build' => (
     default => 0,
 );
 
+has 'verbose' => (
+    is      => 'rw',
+    isa     => 'Int',
+    default => 0,
+);
+
+sub BUILD {
+    my $self = shift;
+    $self->_setup_dependencies();
+}
+
+sub _setup_dependencies {
+    my $self = shift;
+    $self->_build_dependency_analyzer;
+}
+
+sub _build_dependency_analyzer {
+    my $self = shift;
+    my $dependency_analyzer
+        = CPAN::Packager::DependencyAnalyzer->new( downloader =>
+            CPAN::Packager::DownloaderFactory->create( $self->downloader ) );
+    $self->dependency_analyzer($dependency_analyzer);
+}
+
 sub make {
     my ( $self, $module, $built_modules ) = @_;
     die 'module must be passed' unless $module;
     $self->log( info => "### Building packages for $module ... ###" );
     my $config = $self->config_loader->load( $self->conf );
     $config->{modules} = $built_modules if $built_modules;
+    $config->{global}->{verbose} = $self->verbose;
 
     $self->log( info => "### Analyzing dependencies for $module ... ###" );
-    my ( $modules, $resolved_module_name) = $self->analyze_module_dependencies( $module, $config );
+    my ( $modules, $resolved_module_name )
+        = $self->analyze_module_dependencies( $module, $config );
 
-    $modules->{$resolved_module_name}->{force_build} = 1; # always build target module.
+    $modules->{$resolved_module_name}->{force_build}
+        = 1;    # always build target module.
 
     $config = $self->merge_config( $modules, $config )
         if $self->conf;
@@ -129,11 +157,12 @@ sub build_modules {
         next if $module->{build_status};
         next
             if $builder->is_installed( $module->{module} )
-                && !$self->always_build && !$module->{force_build};
+                && !$self->always_build
+                && !$module->{force_build};
 
         # FIXME: RPM is not consider force_build setting.
         if ( $self->always_build ) {
-            $module->{force_build} = 1; # afffect force_build flag.
+            $module->{force_build} = 1;    # afffect force_build flag.
         }
 
         local $@;
@@ -151,7 +180,8 @@ sub build_modules {
             }
         }
     }
-    my %modules = map { exists $_->{module} ? { $_->{module} => $_ } : $_ => $_; }
+    my %modules
+        = map { exists $_->{module} ? { $_->{module} => $_ } : $_ => $_; }
         @{$modules};
     return \%modules;
 }
@@ -161,7 +191,7 @@ sub analyze_module_dependencies {
     $self->log( info => "Analyzing dependencies for $module ..." );
     my $analyzer = $self->dependency_analyzer;
     my $resolved_module = $analyzer->analyze_dependencies( $module, $config );
-    return ( $analyzer->modules, $resolved_module);
+    return ( $analyzer->modules, $resolved_module );
 }
 
 no Mouse;
@@ -194,6 +224,14 @@ This makes it so easy to make a perl module into a Redhat/Debian package
 Takatoshi Kitano E<lt>kitano.tk@gmail.comE<gt>
 
 walf443
+
+=head1 CONTRIBUTORS
+
+Many people have contributed ideas, inspiration, fixes and features to
+the Angelos.  Their efforts continue to be very much appreciated.
+Please let me know if you think anyone is missing from this list.
+
+   walf443, afoxson
 
 =head1 SEE ALSO
 

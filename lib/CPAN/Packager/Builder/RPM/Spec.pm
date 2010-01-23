@@ -13,6 +13,8 @@ use URI::Escape qw(uri_escape);
 use Cwd;
 use YAML;
 use RPM::Specfile;
+use CPAN::DistnameInfo;
+use Archive::Zip;
 
 sub build {
     my ( $self, $args, $fullname ) = @_;
@@ -24,7 +26,7 @@ sub build {
 
     $defaults{'outdir'}      = './';
     $defaults{'tmpdir'}      = '/tmp';
-    $defaults{'release'}     = '8';
+    $defaults{'release'}     = 1;
     $defaults{'installdirs'} = "";
     {
         my ( $username, $fullname ) = ( getpwuid($<) )[ 0, 6 ];
@@ -105,9 +107,15 @@ sub build {
 
     $build_switch = 'a' if ( defined( $options{'buildall'} ) );
 
-    $tarball =~ /^(.+)\-([^-]+)\.t(ar\.)?gz$/;
-    my $name = $options{name}    || $1;
-    my $ver  = $options{version} || $2;
+    my $local_tarball = $tarball;
+    $local_tarball    =~ s/::/-/g;
+    my $distro        = CPAN::DistnameInfo->new($local_tarball);
+    my $dist_name     = $distro->dist;
+    $dist_name        =~ s/-/::/g;
+    my $version       = $distro->version;
+    my $name          = $options{name}    || $dist_name;
+    my $ver           = $options{version} || $version;
+
     my $tarball_top_dir = "$name-%{version}";
 
     die "Module name/version not parsable from $tarball"
@@ -119,8 +127,19 @@ sub build {
         or die "copy $fullname: $!";
     utime( ( stat($fullname) )[ 8, 9 ], "$tmpdir/$tarball" );
 
-    if ( my @files = Archive::Tar->list_archive("$tmpdir/$tarball") ) {
+    my (@files, $zip);
+
+    if ($distro->extension eq 'zip') {
+        $zip = Archive::Zip::Archive->new("$tmpdir/$tarball");
+        @files = $zip->memberNames;
+    }
+    else {
+        @files = Archive::Tar->list_archive("$tmpdir/$tarball");
+    }
+
+    if ( @files ) {
         $use_module_build = 1 if grep {/Build\.PL$/} @files;
+        $use_module_build = 0 if grep {/Makefile\.PL$/} @files;
 
         if ( not exists $options{noarch} ) {
             $noarch = 1;
@@ -133,9 +152,18 @@ sub build {
             $prefixes{ $path_components[0] }++;
 
             if ( $path_components[-1] eq 'META.yml' ) {
-                my $tar = new Archive::Tar;
-                $tar->read( "$tmpdir/$tarball", 1 );
-                my $contents = $tar->get_content($_);
+                my $contents;
+
+                if ($distro->extension eq 'zip') {
+                    my $member = $zip->memberNamed($_);
+                    $contents = $member->contents;
+                }
+                else {
+                    my $tar = new Archive::Tar;
+                    $tar->read( "$tmpdir/$tarball", 1 );
+                    $contents = $tar->get_content($_);
+                }
+
                 my $yaml;
                 eval { $yaml = Load($contents); };
 
@@ -267,19 +295,16 @@ sub build {
     $spec->push_file( '%doc ' . join( ' ', sort @docs ) ) if @docs;
 
     if ( $options{test} ) {
-        $spec->check("make test");
+        if($use_module_build) {
+            $spec->check("perl Build.PL");
+            $spec->check("./Build test");
+        } else {
+            $spec->check("perl Makefile.PL");
+            $spec->check("make test");
+        }
     }
 
     my $installdirs = "";
-    if ( $options{'installdirs'} ) {
-
-        # perl 5.8 explicitly supports the INSTALLDIRS option.  in previous
-        # perls, it was a vendor added option.  Red Hat and Debian provide
-        # this for their perl 5.6.1, but the syntax for 5.8.0 is different,
-        # at least in the Red Hat case
-
-        $installdirs = "INSTALLDIRS=$options{'installdirs'}";
-    }
 
     my $makefile_pl
         = qq{CFLAGS="\$RPM_OPT_FLAGS" %{__perl} Makefile.PL < /dev/null};
@@ -287,13 +312,21 @@ sub build {
         = qq{make pure_install PERL_INSTALL_ROOT=\$RPM_BUILD_ROOT};
     my $make;
     if ($use_module_build) {
+        if ( $options{'installdirs'} ) {
+            $installdirs = "--installdirs $options{'installdirs'}";
+        }
+
         $makefile_pl
             = qq{CFLAGS="\$RPM_OPT_FLAGS" %{__perl} Build.PL destdir=\$RPM_BUILD_ROOT $installdirs < /dev/null};
         $make_install
             = qq{./Build pure_install PERL_INSTALL_ROOT=\$RPM_BUILD_ROOT};
-        $make = "./Build %{?_smp_mflags} OPTIMIZE=\"\$RPM_OPT_FLAGS\"";
+        $make = "./Build OPTIMIZE=\"\$RPM_OPT_FLAGS\"";
     }
     else {
+        if ( $options{'installdirs'} ) {
+            $installdirs = "INSTALLDIRS=$options{'installdirs'}";
+        }
+
         $makefile_pl
             = qq{CFLAGS="\$RPM_OPT_FLAGS" %{__perl} Makefile.PL $installdirs};
         $make = "make %{?_smp_mflags} OPTIMIZE=\"\$RPM_OPT_FLAGS\"";

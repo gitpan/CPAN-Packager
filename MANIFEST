@@ -17,6 +17,7 @@ conf/debian/rules.Module-Build.noxs
 conf/debian/rules.Module-Build.xs
 conf/modules.list
 inc/Module/Install.pm
+inc/Module/Install/AuthorRequires.pm
 inc/Module/Install/AuthorTests.pm
 inc/Module/Install/Base.pm
 inc/Module/Install/Can.pm
@@ -24,6 +25,8 @@ inc/Module/Install/Fetch.pm
 inc/Module/Install/Include.pm
 inc/Module/Install/Makefile.pm
 inc/Module/Install/Metadata.pm
+inc/Module/Install/ReadmeFromPod.pm
+inc/Module/Install/Repository.pm
 inc/Module/Install/Scripts.pm
 inc/Module/Install/TestBase.pm
 inc/Module/Install/Win32.pm
@@ -53,7 +56,10 @@ lib/CPAN/Packager/DependencyFilter/Common.pm
 lib/CPAN/Packager/DependencyFilter/Deb.pm
 lib/CPAN/Packager/DependencyFilter/Role.pm
 lib/CPAN/Packager/DependencyFilter/RPM.pm
-lib/CPAN/Packager/Downloader.pm
+lib/CPAN/Packager/Downloader/CPANPLUS.pm
+lib/CPAN/Packager/Downloader/Fresh.pm
+lib/CPAN/Packager/Downloader/Role.pm
+lib/CPAN/Packager/DownloaderFactory.pm
 lib/CPAN/Packager/Extractor.pm
 lib/CPAN/Packager/Home.pm
 lib/CPAN/Packager/JA.pod
@@ -65,7 +71,6 @@ Makefile.PL
 MANIFEST			This list of files
 META.yml
 README
-README.md
 t/00_load_all.t
 t/010_builder_rpm/99_template.t
 t/020_builder_deb/01_package_name.t

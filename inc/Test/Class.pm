@@ -13,7 +13,7 @@ use Storable qw(dclone);
 use Test::Builder;
 use Test::Class::MethodInfo;
 
-our $VERSION = '0.30';
+our $VERSION = '0.33';
 
 my $Check_block_has_run;
 {
@@ -99,14 +99,8 @@ sub Test : ATTR(CODE,RAWDATA) {
         my $name = *{$symbol}{NAME};
         warn "overriding public method $name with a test method in $class\n"
                 if _is_public_method( $class, $name );
-        eval { 
-            my ($type, $num_tests) = _parse_attribute_args($args);        
-            $Tests->{$class}->{$name} = Test::Class::MethodInfo->new(
-                name => $name, 
-                num_tests => $num_tests,
-                type => $type,
-            );	
-        } || warn "bad test definition '$args' in $class->$name\n";	
+        eval { $class->add_testinfo($name, _parse_attribute_args($args)) } 
+            || warn "bad test definition '$args' in $class->$name\n";	
     };
 };
 
@@ -115,6 +109,15 @@ sub Tests : ATTR(CODE,RAWDATA) {
     $args ||= 'no_plan';
     Test( $class, $symbol, $code_ref, $attr, $args );
 };
+
+sub add_testinfo {
+    my($class, $name, $type, $num_tests) = @_;
+    $Tests->{$class}->{$name} = Test::Class::MethodInfo->new(
+        name => $name,
+        num_tests => $num_tests,
+        type => $type,
+    );
+}
 
 sub _class_of {
     my $self = shift;
