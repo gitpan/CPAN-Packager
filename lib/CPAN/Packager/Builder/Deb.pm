@@ -31,6 +31,8 @@ sub check_executables_exist_in_path {
 
 sub build {
     my ( $self, $module ) = @_;
+    $self->release($module->{release}) if $module->{release};
+    $self->pkg_name($module->{pkg_name}) if $module->{pkg_name};
     my $package = $self->_build_package_with_dh_make_perl($module);
     $self->install($module);
     return $package;
@@ -41,7 +43,8 @@ sub _build_package_with_dh_make_perl {
     die "module param must have module name" unless $module->{module};
     die "Can't find source for package"      unless $module->{src};
 
-    my $package            = $self->package_name( $module->{module} );
+    my $package = $self->get_package_name($module);
+
     my $package_output_dir = $self->package_output_dir;
 
     if ( !$module->{force_build} ) {
@@ -71,7 +74,8 @@ sub _build_package_with_dh_make_perl {
 
 sub install {
     my ( $self, $module ) = @_;
-    my $package = $self->package_name( $module->{module} );
+    my $package = $self->get_package_name($module);
+
     CPAN::Packager::Util::run_command(
         "sudo dpkg -i $module->{src}/../${package}_@{[ $module->{version} ]}*.deb",
         $self->config( global => "verbose" )
@@ -105,8 +109,17 @@ sub _build_dh_make_perl_command {
             }
         }
 
-        $version          .= "-1";
+        if ($self->release) {
+            $version .= "-" . $self->release;
+        }
+        else {
+            $version .= "-1";
+        }
+
         $dh_make_perl_cmd .= " --version $version";
+    }
+    if ( $self->pkg_name ) {
+        $dh_make_perl_cmd .= " --packagename " . $self->pkg_name;
     }
 
     $dh_make_perl_cmd;
@@ -155,7 +168,13 @@ sub is_installed {
     my ( $self, $package ) = @_;
 
     if ( $package !~ /^lib.+-perl/ ) {
-        $package = $self->package_name($package);
+        if (   $self->config( modules => $package )
+            && $self->config( modules => $package )->{pkg_name} ) {
+            $package = $self->config( modules => $package )->{pkg_name};
+        }
+        else {
+            $package = $self->package_name($package);
+        }
     }
 
     my $already_installed;

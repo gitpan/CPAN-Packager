@@ -60,6 +60,7 @@ sub build {
         unless $module->{tgz};
 
     $self->release($module->{release}) if $module->{release};
+    $self->pkg_name($module->{pkg_name}) if $module->{pkg_name};
 
     my ( $spec_file_name, $spec_content )
         = $self->generate_spec_file($module);
@@ -70,13 +71,21 @@ sub build {
     $self->install($module) unless $is_failed;
     $self->log(
         info => ">>> finished building rpm package ( $module->{module} )" );
-    return $self->package_name( $module->{module} );
+    return $self->get_package_name($module);
+}
+
+sub get_spec_name {
+    my ($self, $module) = @_; 
+    my $package_name = $self->get_package_name($module);
+    my $spec_name = $package_name . ".spec";
+    return $spec_name;
 }
 
 sub generate_spec_file {
     my ( $self, $module ) = @_;
     my $spec_content   = $self->generate_spec_with_cpanflute($module);
-    my $spec_file_name = $self->package_name( $module->{module} ) . ".spec";
+    my $spec_file_name = $self->get_spec_name($module);
+
     $spec_content
         = $self->filter_spec_file( $spec_content, $module->{module} );
 
@@ -108,11 +117,18 @@ sub generate_spec_with_cpanflute {
         'release'     => $self->release,
         'test'        => 1,
         'packager'    => 'cpanpackager',
+        'tmpdir'      => $self->build_dir,
+        'pkg_name'    => $self->pkg_name,
+        'epoch'       => $module->{epoch},
     };
 
     $opts->{test} = 0 if $module->{skip_test};
 
-    my $spec = $self->spec_builder->build( $opts, $copy_to );
+    if(defined $module->{custom} and defined $module->{custom}->{patches}) {
+        $opts->{patch} = $module->{custom}->{patches};
+    }
+
+    my $spec = $self->spec_builder->build( $opts, $copy_to, $self->build_dir );
 
     $self->log( info => '>>> generated specfile for ' . $tgz );
     $spec;
@@ -143,6 +159,7 @@ sub create_spec_file {
 
 sub filter_requires_for_rpmbuild {
     my ( $self, $module, $spec_content ) = @_;
+    $spec_content = $self->_prefix_obsoletes( $spec_content, $module );
     $spec_content
         = $self->_filter_module_requires_for_rpmbuild( $spec_content,
         $module );
@@ -184,6 +201,22 @@ sub _filter_module_requires_for_spec {
     }
     $spec_content;
 
+}
+
+sub _prefix_obsoletes {
+    my ( $self, $spec_content, $module ) = @_;
+    if (   $self->config( modules => $module )
+        && $self->config( modules => $module )->{obsoletes} )
+    {
+        for my $obsolete (
+            @{ $self->config( modules => $module )->{obsoletes} || () } )
+        {
+            $spec_content
+                = "Obsoletes: $obsolete->{package}\n"
+                . $spec_content;
+        }
+    }
+    $spec_content;
 }
 
 sub _filter_global_requires_for_rpmbuild {
@@ -270,7 +303,15 @@ sub get_default_build_arch {
 
 sub is_installed {
     my ( $self, $module ) = @_;
-    my $package = $self->package_name($module);
+    my $package;
+
+    if (   $self->config( modules => $module )
+        && $self->config( modules => $module )->{pkg_name} ) {
+        $package = $self->config( modules => $module )->{pkg_name};
+    }
+    else {
+        $package = $self->package_name($module);
+    }
 
     my $return_value
         = CPAN::Packager::Util::capture_command("LANG=C rpm -q $package");
@@ -378,7 +419,8 @@ sub install {
     my ( $self, $module ) = @_;
     my $module_name  = $module->{module};
     my $module_version = $module->{version};
-    my $package_name = $self->package_name($module_name);
+    my $package_name = $self->get_package_name($module_name);
+
     $self->log( info => ">>> install $package_name-$module_version" );
     my $rpm_path = file( $self->package_output_dir, "$package_name-$module_version" );
     my $result = CPAN::Packager::Util::run_command(

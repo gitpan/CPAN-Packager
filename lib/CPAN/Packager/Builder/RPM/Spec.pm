@@ -84,8 +84,6 @@ sub build {
     my $use_module_build = 0;
     my @docs             = ();
 
-    $tmpdir = tempdir( CLEANUP => 1, DIR => $tmpdir );
-
     #
     # Set build arch - this is needed to find out where
     # the binary rpm was placed, and copy it back to the
@@ -234,7 +232,12 @@ sub build {
     my $spec = new RPM::Specfile;
 
     # some basic spec fields
-    $spec->name("perl-$name");
+    if ( $options{pkg_name} ) {
+        $spec->name($options{pkg_name});
+    }
+    else {
+        $spec->name("perl-$name");
+    }
     $spec->version($ver);
     $spec->release($release);
     $spec->epoch( $options{epoch} );

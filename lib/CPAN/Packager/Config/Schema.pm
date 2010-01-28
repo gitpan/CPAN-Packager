@@ -132,10 +132,27 @@ which is passed to cpan-packager script.
                     type: str
                     required: true
                     unique: yes
+                  "patches":
+                    type: seq
+                    sequence:
+                      - type: str
               "version":
                 type: any
               "release":
                 type: int
+              "pkg_name":
+                type: str
+              "epoch":
+                type: int
+              "obsoletes":
+                type: seq
+                sequence:
+                  - type: map
+                    mapping:
+                      "package":
+                        type: str
+                        unique: yes
+                        required: true
 
 =head1 AUTHOR
 
