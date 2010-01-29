@@ -15,6 +15,7 @@ use YAML;
 use RPM::Specfile;
 use CPAN::DistnameInfo;
 use Archive::Zip;
+use Log::Log4perl qw(:easy);
 
 sub build {
     my ( $self, $args, $fullname ) = @_;
@@ -30,7 +31,7 @@ sub build {
     $defaults{'installdirs'} = "";
     {
         my ( $username, $fullname ) = ( getpwuid($<) )[ 0, 6 ];
-        $fullname = ( split /,/, $fullname )[0];
+        $fullname = ( split /,/, $fullname )[0]; #/
         $defaults{'email'} = $fullname ? $fullname . ' ' : '';
         $defaults{'email'} .= '<';
         $defaults{'email'} .= $ENV{REPLYTO} || $username . '@redhat.com';
@@ -57,14 +58,12 @@ sub build {
     # If we were given a description file, make sure it exists
     if ( $options{'descfile'} ) {
         if ( !-e $options{'descfile'} ) {
-            print STDERR "Description file given does not exist!\n";
-            print STDERR "File:  ${options{'descfile'}}\n";
-            exit(1);
+            FATAL("Description file given does not exist!");
+            LOGEXIT("File:  ${options{'descfile'}}");
         }
         if ( !-r $options{'descfile'} ) {
-            print STDERR "Description file given is not readable!\n";
-            print STDERR "File:  ${options{'descfile'}}\n";
-            exit(1);
+    	    FATAL("Description file given is not readable!");
+            LOGEXIT("File:  ${options{'descfile'}}");
         }
     }
 
@@ -84,6 +83,11 @@ sub build {
     my $use_module_build = 0;
     my @docs             = ();
 
+    my $patchdir         = $options{patchdir};
+
+    # FIXME: this line breaks supporting Patch RPM spec field.
+    $tmpdir = tempdir( CLEANUP => 1, DIR => $tmpdir );
+
     #
     # Set build arch - this is needed to find out where
     # the binary rpm was placed, and copy it back to the
@@ -98,8 +102,7 @@ sub build {
     else {
         $build_arch = get_default_build_arch();
         if ( $build_arch eq '' ) {
-            print STDERR "Could not get default build arch!\n";
-            exit(1);
+            LOGEXIT("Could not get default build arch!");
         }
     }
 
@@ -207,10 +210,10 @@ sub build {
     my $patch      = '';
     if ( $options{patch} ) {
         for $patch ( @{ $options{'patch'} } ) { ## no critic
-            copy( $patch, $tmpdir ) or die "copy ${patch}: $!";
+            copy( $patch, $patchdir ) or die "copy ${patch}: $!";
             utime(
                 ( stat( $options{patch} ) )[ 8, 9 ],
-                "$tmpdir/" . basename( $options{patch} )
+                "$patchdir/" . basename( $options{patch} )
             );
             push @patchfiles, ( basename($patch) );
         }

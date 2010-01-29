@@ -64,7 +64,6 @@ lib/CPAN/Packager/Extractor.pm
 lib/CPAN/Packager/Home.pm
 lib/CPAN/Packager/JA.pod
 lib/CPAN/Packager/ModuleNameResolver.pm
-lib/CPAN/Packager/Role/Logger.pm
 lib/CPAN/Packager/Script.pm
 lib/CPAN/Packager/Util.pm
 Makefile.PL

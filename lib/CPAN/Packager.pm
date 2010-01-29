@@ -8,20 +8,9 @@ use CPAN::Packager::DownloaderFactory;
 use CPAN::Packager::Config::Merger;
 use CPAN::Packager::Config::Loader;
 use CPAN::Packager::Util;
-with 'CPAN::Packager::Role::Logger';
+use Log::Log4perl qw(:easy);
 
-our $VERSION = '0.09';
-
-BEGIN {
-    if ( !defined &DEBUG ) {
-        if ( $ENV{CPAN_PACKAGER_DEBUG} ) {
-            *DEBUG = sub () {1};
-        }
-        else {
-            *DEBUG = sub () {0};
-        }
-    }
-}
+our $VERSION = '0.1';
 
 has 'builder' => (
     is      => 'rw',
@@ -46,6 +35,12 @@ has 'dependency_config_merger' => (
     default => sub {
         CPAN::Packager::Config::Merger->new;
     }
+);
+
+has 'is_debug' => (
+    is      => 'rw',
+    lazy    => 1,
+    default => sub { get_logger('')->level() == $DEBUG }
 );
 
 has 'config_loader' => (
@@ -90,12 +85,12 @@ sub _build_dependency_analyzer {
 sub make {
     my ( $self, $module, $built_modules ) = @_;
     die 'module must be passed' unless $module;
-    $self->log( info => "### Building packages for $module ... ###" );
+    INFO("### Building packages for $module ... ###");
     my $config = $self->config_loader->load( $self->conf );
     $config->{modules} = $built_modules if $built_modules;
     $config->{global}->{verbose} = $self->verbose;
 
-    $self->log( info => "### Analyzing dependencies for $module ... ###" );
+    INFO("### Analyzing dependencies for $module ... ###");
     my ( $modules, $resolved_module_name )
         = $self->analyze_module_dependencies( $module, $config );
 
@@ -105,7 +100,7 @@ sub make {
     $config = $self->merge_config( $modules, $config )
         if $self->conf;
 
-    $self->_dump_modules( $config->{modules} );
+    $self->_dump_modules( "config modules", $config->{modules} );
 
     my $sorted_modules = [
         uniq reverse @{
@@ -113,7 +108,7 @@ sub make {
                 $config->{modules} )
             }
     ];
-    $self->_dump_modules($sorted_modules);
+    $self->_dump_modules( "sorted modules", $sorted_modules );
 
     local $@;
     unless ( $self->dry_run ) {
@@ -123,19 +118,21 @@ sub make {
     }
 
     if ($@) {
-        $self->_dump_modules($sorted_modules);
-        die "### Built packages for $module faied :-( ###" . $@;
+        $self->_dump_modules( "Sorted modules", $sorted_modules );
+        LOGDIE( "### Built packages for $module faied :-( ###" . $@ );
     }
-    $self->log( info => "### Built packages for $module :-) ### " );
+    INFO("### Built packages for $module :-) ### ");
     $built_modules;
 }
 
 sub _dump_modules {
-    my ( $self, $modules ) = @_;
-    if (DEBUG) {
-        require Data::Dumper;
-        $self->log( debug => Data::Dumper::Dumper $modules );
-    }
+    my ( $self, $dump_type, $modules ) = @_;
+
+    return if ( !$self->is_debug );
+    return if ( $ENV{CPAN_PACKAGER_DISABLE_DUMP} );
+    require Data::Dumper;
+    DEBUG("$dump_type: ");
+    DEBUG( Data::Dumper::Dumper $modules );
 }
 
 sub merge_config {
@@ -165,19 +162,15 @@ sub build_modules {
             $module->{force_build} = 1;    # afffect force_build flag.
         }
 
-        local $@;
         my $package = $builder->build($module);
 
         if ($package) {
             $module->{build_status} = 'success';
-            $self->log( info => "$module->{module} created ($package)" );
+            INFO("$module->{module} created ($package)");
         }
         else {
             $module->{build_status} = 'failed';
-            $self->log( info => "$module->{module} failed" );
-            if ($@) {
-                die "failed building module: $@";
-            }
+            die("$module->{module} failed");
         }
     }
     my %modules
@@ -188,7 +181,7 @@ sub build_modules {
 
 sub analyze_module_dependencies {
     my ( $self, $module, $config ) = @_;
-    $self->log( info => "Analyzing dependencies for $module ..." );
+    INFO("Analyzing dependencies for $module ...");
     my $analyzer = $self->dependency_analyzer;
     my $resolved_module = $analyzer->analyze_dependencies( $module, $config );
     return ( $analyzer->modules, $resolved_module );
