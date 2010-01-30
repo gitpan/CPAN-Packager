@@ -10,7 +10,7 @@ use CPAN::Packager::Config::Loader;
 use CPAN::Packager::Util;
 use Log::Log4perl qw(:easy);
 
-our $VERSION = '0.1';
+our $VERSION = '0.11';
 
 has 'builder' => (
     is      => 'rw',
@@ -67,6 +67,11 @@ has 'verbose' => (
 sub BUILD {
     my $self = shift;
     $self->_setup_dependencies();
+    $self->_enable_debug if $self->verbose;
+}
+
+sub _enable_debug {
+    get_logger->level($DEBUG);
 }
 
 sub _setup_dependencies {
@@ -85,12 +90,12 @@ sub _build_dependency_analyzer {
 sub make {
     my ( $self, $module, $built_modules ) = @_;
     die 'module must be passed' unless $module;
-    INFO("### Building packages for $module ... ###");
+    INFO("### Building packages for $module ...");
     my $config = $self->config_loader->load( $self->conf );
     $config->{modules} = $built_modules if $built_modules;
     $config->{global}->{verbose} = $self->verbose;
 
-    INFO("### Analyzing dependencies for $module ... ###");
+    INFO("### Analyzing dependencies for $module ...");
     my ( $modules, $resolved_module_name )
         = $self->analyze_module_dependencies( $module, $config );
 
@@ -119,17 +124,17 @@ sub make {
 
     if ($@) {
         $self->_dump_modules( "Sorted modules", $sorted_modules );
-        LOGDIE( "### Built packages for $module faied :-( ###" . $@ );
+        LOGDIE( "### Built packages for $module faied :-(" . $@ );
     }
-    INFO("### Built packages for $module :-) ### ");
+    INFO("### Built packages for $module :-)");
     $built_modules;
 }
 
 sub _dump_modules {
     my ( $self, $dump_type, $modules ) = @_;
 
-    return if ( !$self->is_debug );
-    return if ( $ENV{CPAN_PACKAGER_DISABLE_DUMP} );
+    return unless $self->is_debug;
+    return unless $ENV{CPAN_PACKAGER_ENABLE_DUMP};
     require Data::Dumper;
     DEBUG("$dump_type: ");
     DEBUG( Data::Dumper::Dumper $modules );

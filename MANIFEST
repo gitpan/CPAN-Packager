@@ -1,9 +1,5 @@
-.ditz-config
 .gitignore
 bin/cpan-packager
-bugs/issue-cd5e7c7f0ba814e8b6f5259353dbe1891316ca89.yaml
-bugs/issue-e0ab362b2def48c05535373dd377878a3cab0c50.yaml
-bugs/project.yaml
 Changes
 conf/config-deb.yaml
 conf/config-rpm.yaml
@@ -36,7 +32,6 @@ inc/Test/Base.pm
 inc/Test/Base/Filter.pm
 inc/Test/Builder.pm
 inc/Test/Builder/Module.pm
-inc/Test/Class.pm
 inc/Test/LoadAllModules.pm
 inc/Test/More.pm
 inc/Test/Requires.pm
@@ -84,3 +79,5 @@ t/it/020_build_deb/01-build-simple.t
 t/it/020_build_deb/02-build-module-with-dependencies.t
 t/it/conf/config-deb.yaml
 t/it/conf/config-rpm.yaml
+t/Util/Deb.pm
+t/Util/RPM.pm

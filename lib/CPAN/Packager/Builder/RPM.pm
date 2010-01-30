@@ -51,8 +51,6 @@ sub BUILD {
 }
 
 sub check_executables_exist_in_path {
-    die "cpanflute2 doesn't exist in PATH"
-        if CPAN::Packager::Util::run_command("which cpanflute2");
     die "yum doesn't exist in PATH"
         if CPAN::Packager::Util::run_command("which yum");
     die "rpm doesn't exist in PATH"
@@ -103,7 +101,7 @@ sub generate_spec_with_cpanflute {
     my ( $self, $module ) = @_;
 
     my $tgz = $module->{tgz};
-    INFO( 'generating specfile with cpanflute2 for ' . $tgz );
+    INFO( 'Generating specfile for ' . $tgz);
 
     my $module_name = $module->{module};
     my $version     = $module->{version};

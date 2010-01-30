@@ -5,10 +5,9 @@ author:
 build_requires:
   ExtUtils::MakeMaker: 6.42
   Test::Base: 0
-  Test::Class: 0
   Test::LoadAllModules: 0.02
-  Test::More: 0.92
-  Test::Requires: 0
+  Test::More: 0.94
+  Test::Requires: 0.03
 configure_requires:
   ExtUtils::MakeMaker: 6.42
 distribution_type: module
@@ -61,4 +60,4 @@ requires:
 resources:
   license: http://dev.perl.org/licenses/
   repository: git://github.com/dann/p5-cpan-packager.git
-version: 0.1
+version: 0.11
