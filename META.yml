@@ -62,4 +62,4 @@ requires:
 resources:
   license: http://dev.perl.org/licenses/
   repository: git://github.com/dann/p5-cpan-packager.git
-version: 0.20
+version: 0.21
