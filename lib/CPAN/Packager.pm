@@ -9,12 +9,13 @@ use CPAN::Packager::Config::Merger;
 use CPAN::Packager::Config::Loader;
 use CPAN::Packager::Util;
 use Log::Log4perl qw(:easy);
+use Try::Tiny;
 
-our $VERSION = '0.12';
+our $VERSION = '0.20';
 
 has 'builder' => (
-    is      => 'rw',
-    default => 'Deb',
+    is       => 'rw',
+    required => 1,
 );
 
 has 'downloader' => (
@@ -67,16 +68,26 @@ has 'verbose' => (
 sub BUILD {
     my $self = shift;
     $self->_setup_dependencies();
-    $self->_enable_debug if $self->verbose;
-}
-
-sub _enable_debug {
-    get_logger->level($DEBUG);
+    $self->_setup_logger();
 }
 
 sub _setup_dependencies {
     my $self = shift;
     $self->_build_dependency_analyzer;
+}
+
+sub _setup_logger {
+    my $self = shift;
+    my $level = $self->verbose ? $DEBUG : $INFO;
+    my $layout = '%p: %m{chomp}%n';
+
+    if($ENV{CPAN_PACKAGER_DEBUG}) {
+        $level = $DEBUG; 
+        $layout = '%p %d{HH:mm:ss} [%c:%L]: %m{chomp}%n';
+    }
+
+    Log::Log4perl->easy_init({ level => $level,
+                           layout => $layout });
 }
 
 sub _build_dependency_analyzer {
@@ -115,18 +126,17 @@ sub make {
     ];
     $self->_dump_modules( "sorted modules", $sorted_modules );
 
-    local $@;
     unless ( $self->dry_run ) {
-        eval {
+        try {
             $built_modules = $self->build_modules( $sorted_modules, $config );
+            INFO("### Built packages for $module :-)");
+
+        } catch {
+            $self->_dump_modules( "Sorted modules", $sorted_modules );
+            LOGDIE( "### Built packages for $module faied :-(" . $@ );
         };
     }
 
-    if ($@) {
-        $self->_dump_modules( "Sorted modules", $sorted_modules );
-        LOGDIE( "### Built packages for $module faied :-(" . $@ );
-    }
-    INFO("### Built packages for $module :-)");
     $built_modules;
 }
 
@@ -215,23 +225,41 @@ CPAN::Packager - Create packages(rpm, deb) from perl modules
 =head1 DESCRIPTION
 
 CPAN::Packager is a tool to help you make packages from perl modules on CPAN.
-This makes it so easy to make a perl module into a Redhat/Debian package
+This makes it easy to make a perl module into a Redhat/Debian package.
+
+For full documentation please see the docs for cpan-packager.
 
 =head1 AUTHOR
 
 Takatoshi Kitano E<lt>kitano.tk@gmail.comE<gt>
 
-walf443
+walf443 (debian related modules)
 
 =head1 CONTRIBUTORS
 
-Many people have contributed ideas, inspiration, fixes and features to
-the Angelos.  Their efforts continue to be very much appreciated.
-Please let me know if you think anyone is missing from this list.
+Many people have contributed ideas, inspiration, fixes and features. Their
+efforts continue to be very much appreciated. Please let me know if you think
+anyone is missing from this list.
 
-   walf443, afoxson, toddr
+ walf443, fhoxh, toddr
 
-=head1 SEE ALSO
+=head1 For Developers
+
+=head2 Use CPAN_PACKAGER_DEBUG environment to debug building a distribution package
+
+Debug messages are displayed when you use the verbose option of the
+cpan-packager script.
+
+  CPAN_PACKAGER_DEBUG=1 bin/cpan-packager --conf conf/config-rpm.yaml --module Acme::Bleach 
+    --builder RPM
+
+=head2 How to do live tests
+
+Set the CPAN_PACKAGER_TEST_LIVE environment variable when you execute prove:
+
+  CPAN_PACKAGER_TEST_LIVE=1 prove -lv t/it/010_build_rpm/*.t
+
+=head2 Use 
 
 =head1 LICENSE
 

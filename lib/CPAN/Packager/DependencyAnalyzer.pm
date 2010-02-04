@@ -11,10 +11,10 @@ use CPAN::Packager::Extractor;
 use List::MoreUtils qw(uniq any);
 use FileHandle;
 use Log::Log4perl qw(:easy);
+use Try::Tiny;
+use CPAN::Packager::ConflictionChecker;
 
-has 'downloader' => (
-    is      => 'rw',
-);
+has 'downloader' => ( is => 'rw', );
 
 has 'extractor' => (
     is      => 'rw',
@@ -58,14 +58,14 @@ sub analyze_dependencies {
         if $config->{modules}->{$module}
             && $config->{modules}->{$module}->{build_status};
 
-   # try to download unresolved name because resolver sometimes return wrong name.
+# try to download unresolved name because resolver sometimes return wrong name.
     my $module_info = $self->download_module( $module, $config );
 
     my $resolved_module = $module_info->{dist_name};
     $resolved_module = $self->fix_module_name( $module, $config );
     unless ( $module_info->{dist_name} ) {
 
-       # try to download unresolved name because resolver sometimes return wrong name.
+# try to download unresolved name because resolver sometimes return wrong name.
         $module_info = $self->download_module( $resolved_module, $config );
         $resolved_module = $module_info->{dist_name};
     }
@@ -137,18 +137,22 @@ sub download_module {
         if ($custom_src) {
             if ( $custom_src->{tgz_path} ) {
                 $custom_src->{tgz_path}
-                    = CPAN::Packager::Config::Replacer->replace_variable($custom_src->{tgz_path} );
+                    = CPAN::Packager::Config::Replacer->replace_variable(
+                    $custom_src->{tgz_path} );
             }
             $custom_src->{src_dir}
                 = $custom_src->{src_dir}
-                ? CPAN::Packager::Config::Replacer->replace_variable($custom_src->{src_dir})
+                ? CPAN::Packager::Config::Replacer->replace_variable(
+                $custom_src->{src_dir} )
                 : $self->extractor->extract( $custom_src->{tgz_path} );
             $self->{__downloaded}->{$module} = $custom_src;
 
-            if(defined $custom_src->{patches} ) {
+            if ( defined $custom_src->{patches} ) {
                 my @expanded_patches = ();
-                foreach my $patch (@{$custom_src->{patches}}) {
-                   push @expanded_patches, CPAN::Packager::Config::Replacer->replace_variable($patch); 
+                foreach my $patch ( @{ $custom_src->{patches} } ) {
+                    push @expanded_patches,
+                        CPAN::Packager::Config::Replacer->replace_variable(
+                        $patch);
                 }
                 $custom_src->{patches} = \@expanded_patches;
             }
@@ -200,23 +204,32 @@ sub is_added {
 sub is_core {
     my ( $self, $module ) = @_;
     return 1 if $module eq 'perl';
+
+    # We should process dual life core modules by default. 
+    # The entire point of dual life modules to exist in the first
+    # place is for users to be able to update these modules independent of
+    # upgrading Perl. The vast majority of our users will want dual life
+    # modules to be updated, particularly considering that a lot of recent
+    # CPAN distributions directly depend on updated dual life core modules.
+    return 0 if $self->is_dual_lived_module($module);
+
     my $corelist = $Module::CoreList::version{$]};
+    return 1 if exists $corelist->{$module};
 
-    # return true only if this is a dual life core module
-    if (exists $corelist->{$module}) {
-        my $devnull_fh = FileHandle->new('/dev/null', 'w');
-        my $real_fh = $CPANPLUS::Error::ERROR_FH;
+    return 0;
+}
 
-        $CPANPLUS::Error::ERROR_FH = $devnull_fh;
-        my $mod = $self->downloader->fetcher->parse_module(module => $module);
-        $CPANPLUS::Error::ERROR_FH = $real_fh;
-        return 1 unless defined $mod;
-
-        my $pkg = $mod->package;
-        return 1 if $pkg =~ /^perl-?\d\.\d/;
+sub is_dual_lived_module {
+    my ( $self, $module ) = @_;
+    my $conflict_checker = CPAN::Packager::ConflictionChecker->new(
+        downloader => $self->downloader );
+    if ( $conflict_checker->is_dual_lived_module($module) ) {
+        $conflict_checker->check_conflict($module);
+        return 1;
     }
-
-    return;
+    else {
+        return 0;
+    }
 }
 
 sub get_dependencies {
@@ -231,16 +244,13 @@ sub get_dependencies {
             @{ $config->{modules}->{$module}->{depends} };
     }
 
-    my $make_yml_generate_fg = any { $_ eq $module }
-    @{ $config->{global}->{fix_meta_yml_modules} || [] };
-
-    DEBUG("Start analyzing dependencies with Module::Depends");
-    my $depends_mod
-        = $make_yml_generate_fg
-        ? "Module::Depends::Intrusive"
-        : "Module::Depends";
-    my $deps = $depends_mod->new->dist_dir($src)->find_modules;
-    DEBUG("Finish analyzing dependencies with Module::Depends");
+    my $deps;
+    try {
+        $deps = Module::Depends->new->dist_dir($src)->find_modules;
+    }
+    catch {
+        $deps = Module::Depends::Intrusive->new->dist_dir($src)->find_modules;
+    };
 
     return grep { !$self->is_added($_) }
         grep    { !$self->is_core($_) } uniq(

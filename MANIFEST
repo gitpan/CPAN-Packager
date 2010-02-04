@@ -46,6 +46,7 @@ lib/CPAN/Packager/Config/Merger.pm
 lib/CPAN/Packager/Config/Replacer.pm
 lib/CPAN/Packager/Config/Schema.pm
 lib/CPAN/Packager/Config/Validator.pm
+lib/CPAN/Packager/ConflictionChecker.pm
 lib/CPAN/Packager/DependencyAnalyzer.pm
 lib/CPAN/Packager/DependencyFilter/Common.pm
 lib/CPAN/Packager/DependencyFilter/Deb.pm
@@ -58,6 +59,7 @@ lib/CPAN/Packager/DownloaderFactory.pm
 lib/CPAN/Packager/Extractor.pm
 lib/CPAN/Packager/Home.pm
 lib/CPAN/Packager/JA.pod
+lib/CPAN/Packager/Manual.pod
 lib/CPAN/Packager/ModuleNameResolver.pm
 lib/CPAN/Packager/Script.pm
 lib/CPAN/Packager/Util.pm
@@ -77,6 +79,7 @@ t/it/010_build_rpm/01-build-simple.t
 t/it/010_build_rpm/02-build-module-with-dependencies.t
 t/it/020_build_deb/01-build-simple.t
 t/it/020_build_deb/02-build-module-with-dependencies.t
+t/it/030_conflict_checker/01-confliction-checker.t
 t/it/conf/config-deb.yaml
 t/it/conf/config-rpm.yaml
 t/Util/Deb.pm
