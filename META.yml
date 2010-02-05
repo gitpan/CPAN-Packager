@@ -37,6 +37,7 @@ requires:
   CPAN::DistnameInfo: 0
   CPANPLUS::Backend: 0
   Class::Inspector: 0
+  ExtUtils::Installed: 1.54
   File::Copy: 0
   Filter::Util::Call: 0
   FindBin::libs: 0
@@ -62,4 +63,4 @@ requires:
 resources:
   license: http://dev.perl.org/licenses/
   repository: git://github.com/dann/p5-cpan-packager.git
-version: 0.22
+version: 0.23
