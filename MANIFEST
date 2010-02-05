@@ -56,6 +56,7 @@ lib/CPAN/Packager/Downloader/CPANPLUS.pm
 lib/CPAN/Packager/Downloader/Fresh.pm
 lib/CPAN/Packager/Downloader/Role.pm
 lib/CPAN/Packager/DownloaderFactory.pm
+lib/CPAN/Packager/DualLivedList.pm
 lib/CPAN/Packager/Extractor.pm
 lib/CPAN/Packager/Home.pm
 lib/CPAN/Packager/JA.pod
@@ -79,7 +80,9 @@ t/it/010_build_rpm/01-build-simple.t
 t/it/010_build_rpm/02-build-module-with-dependencies.t
 t/it/020_build_deb/01-build-simple.t
 t/it/020_build_deb/02-build-module-with-dependencies.t
+t/it/030_conflict_checker/01-confliction-checker-
 t/it/030_conflict_checker/01-confliction-checker.t
+t/it/030_conflict_checker/02-confliction-checker-nonduallifecore.t
 t/it/conf/config-deb.yaml
 t/it/conf/config-rpm.yaml
 t/Util/Deb.pm

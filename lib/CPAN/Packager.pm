@@ -11,7 +11,7 @@ use CPAN::Packager::Util;
 use Log::Log4perl qw(:easy);
 use Try::Tiny;
 
-our $VERSION = '0.21';
+our $VERSION = '0.22';
 
 has 'builder' => (
     is       => 'rw',
@@ -137,7 +137,14 @@ sub make {
         };
     }
 
+    $self->check_confliction;
+
     $built_modules;
+}
+
+sub check_confliction {
+    my $self = shift;
+    $self->dependency_analyzer->confliction_checker->check_conflict();
 }
 
 sub _dump_modules {
