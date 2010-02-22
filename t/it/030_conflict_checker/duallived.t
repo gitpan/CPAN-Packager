@@ -13,9 +13,21 @@ my $downloader = CPAN::Packager::DownloaderFactory->create("CPANPLUS");
 $downloader->set_cpan_mirrors(['http://cpan.pair.com/']);
 my $confliction_checker = CPAN::Packager::ConflictionChecker->new(downloader => $downloader);
 
-subtest "File::Basename" => sub {
-    my $is_dual_lived_module = $confliction_checker->is_dual_lived_module('File::Basename');
-    ok !$is_dual_lived_module;
+subtest "Is Text::ParseWords dual-lived module?" => sub {
+    my $is_dual_life_module = $confliction_checker->is_dual_lived_module('Text::ParseWords');
+    ok $is_dual_life_module;
+    done_testing;
+};
+
+subtest "Is CPAN dual-lived module?" => sub {
+    my $is_dual_life_module = $confliction_checker->is_dual_lived_module('CPAN');
+    ok $is_dual_life_module;
+    done_testing;
+};
+
+subtest "Is File::Temp dual-lived? module" => sub {
+    my $is_dual_life_module = $confliction_checker->is_dual_lived_module('File::Temp');
+    ok $is_dual_life_module;
     done_testing;
 };
 
