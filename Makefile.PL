@@ -1,5 +1,6 @@
 sub readme_from {
-    warn "You need to install Module::Install::ReadmeFromPod to generate README";
+    warn
+        "You need to install Module::Install::ReadmeFromPod to generate README";
 }
 
 sub use_test_base {
@@ -33,45 +34,42 @@ requires(
     'Hash::Merge'               => 0,
     'LWP::UserAgent'            => 0,
     'List::Compare'             => 0,
-    'List::MoreUtils'           => 0,
     'Module::CoreList'          => '2.17',
     'Module::Depends'           => 0,
     'Mouse'                     => '0.47',
     'MouseX::Getopt'            => '0.2601',
     'Getopt::Long::Descriptive' => '0.083',
     'Archive::Extract'          => 0,
-    'UNIVERSAL::require'        => 0,
     'YAML'                      => 0,
-    'Pod::POM'                  => 0,
-    'Class::Inspector'          => 0,
     'Kwalify'                   => '1.20',
     'CPAN::DistnameInfo'        => 0,
     'Log::Log4perl'             => '1.26',
     'Try::Tiny'                 => '0.04',
     'IPC::Cmd'                  => 0,
     'IO::File'                  => 0,
+    'Parse::CPAN::Meta'         => 0,
 );
 
 features(
     'build RPM package?' => [
         -default => 0,
         recommends_hack( 'RPM::Specfile'  => 0 ),
-        recommends_hack( 'File::Basename' => 0 ),
         recommends_hack( 'Archive::Tar'   => 0 ),
+        recommends_hack( 'Archive::Zip'   => 0 ),
         recommends_hack( 'File::Temp'     => 0 ),
         recommends_hack( 'URI::Escape'    => 0 ),
         recommends_hack( 'Cwd'            => 0 ),
-        recommends_hack( 'Archive::Zip'   => 0 ),
+        recommends_hack( 'File::Basename' => 0 ),
     ],
     'use App::CPAN::Fresh as a module downloader?' => [
         -default => 0,
         recommends_hack( 'App::CPAN::Fresh' => 0 ),
-        recommends_hack( 'URI' => 0 ),
+        recommends_hack( 'URI'              => 0 ),
     ],
     'use CPANPLUS as a module downloader?' => [
         -default => 0,
         recommends_hack( 'CPANPLUS::Backend' => 0 ),
-        recommends_hack( 'URI' => 0 ),
+        recommends_hack( 'URI'               => 0 ),
     ],
 );
 

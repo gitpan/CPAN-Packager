@@ -36,7 +36,6 @@ recommends:
 requires:
   Archive::Extract: 0
   CPAN::DistnameInfo: 0
-  Class::Inspector: 0
   File::Copy: 0
   Filter::Util::Call: 0
   FindBin::libs: 0
@@ -47,18 +46,16 @@ requires:
   Kwalify: 1.20
   LWP::UserAgent: 0
   List::Compare: 0
-  List::MoreUtils: 0
   Log::Log4perl: 1.26
   Module::CoreList: 2.17
   Module::Depends: 0
   Mouse: 0.47
   MouseX::Getopt: 0.2601
-  Pod::POM: 0
+  Parse::CPAN::Meta: 0
   Try::Tiny: 0.04
-  UNIVERSAL::require: 0
   YAML: 0
   perl: 5.8.0
 resources:
   license: http://dev.perl.org/licenses/
   repository: git://github.com/dann/p5-cpan-packager.git
-version: 0.24
+version: 0.30

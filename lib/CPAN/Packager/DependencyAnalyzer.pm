@@ -3,16 +3,19 @@ use Mouse;
 use Module::Depends;
 use Module::Depends::Intrusive;
 use Module::CoreList;
-use CPAN::Packager::ModuleNameResolver;
-use CPAN::Packager::DependencyFilter::Common;
 use List::Compare;
-use CPAN::Packager::Config::Replacer;
-use CPAN::Packager::Extractor;
-use List::MoreUtils qw(uniq any);
 use FileHandle;
 use Log::Log4perl qw(:easy);
 use Try::Tiny;
+use Parse::CPAN::Meta ();
+use CPAN::Packager::ModuleNameResolver;
+use CPAN::Packager::DependencyFilter::Common;
+use CPAN::Packager::FileUtil qw(file dir);
+use CPAN::Packager::ListUtil qw(uniq any);
 use CPAN::Packager::ConflictionChecker;
+use CPAN::Packager::Config::Replacer;
+use CPAN::Packager::Extractor;
+use CPAN::Packager::MetaAnalyzer;
 
 has 'downloader' => ( is => 'rw', );
 
@@ -27,6 +30,13 @@ has 'module_name_resolver' => (
     is      => 'rw',
     default => sub {
         CPAN::Packager::ModuleNameResolver->new;
+    }
+);
+
+has 'meta_analyzer' => (
+    is      => 'rw',
+    default => sub {
+        CPAN::Packager::MetaAnalyzer->new;
     }
 );
 
@@ -250,19 +260,10 @@ sub get_dependencies {
             @{ $config->{modules}->{$module}->{depends} };
     }
 
-    my $deps;
-    try {
-        $deps = Module::Depends->new->dist_dir($src)->find_modules;
-    }
-    catch {
-        $deps = Module::Depends::Intrusive->new->dist_dir($src)->find_modules;
-    };
+    my $deps = $self->meta_analyzer->get_dependencies_from_meta($src);
 
     return grep { !$self->is_added($_) }
-        grep    { !$self->is_non_dualife_core_module($_) } uniq(
-        keys %{ $deps->requires || {} },
-        keys %{ $deps->build_requires || {} }
-        );
+        grep    { !$self->is_non_dualife_core_module($_) } @$deps;
 }
 
 sub resolve_module_name {

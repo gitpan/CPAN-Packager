@@ -62,7 +62,9 @@ lib/CPAN/Packager/Extractor.pm
 lib/CPAN/Packager/FileUtil.pm
 lib/CPAN/Packager/Home.pm
 lib/CPAN/Packager/JA.pod
+lib/CPAN/Packager/ListUtil.pm
 lib/CPAN/Packager/Manual.pod
+lib/CPAN/Packager/MetaAnalyzer.pm
 lib/CPAN/Packager/ModuleNameResolver.pm
 lib/CPAN/Packager/Script.pm
 lib/CPAN/Packager/Util.pm
