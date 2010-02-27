@@ -1,3 +1,11 @@
+=encoding utf8
+
+=pod
+
+=head1 NAME
+
+CPAN::Packager::Manual - User manual 
+
 =head1 USER MANUAL
 
 This is the L<CPAN::Packager> users manual. 
@@ -46,57 +54,59 @@ An example configuration section for "cpan_mirrors" may look like:
 
 =item * B<fix_package_depends>
 
-TODO
+Correct misspelt package name.
 
 =over 4
 
 =item * B<from>
 
-TODO
+The incorrect module name which you want to fix.
 
 =item * B<to>
 
-TODO
+The correct module name.
 
 =back
 
 =item * B<no_depends>
 
-TODO
+Suppresses generation of a given required dependency. Sometimes
+authors create dependencies on modules the packager can't find This
+allows the packager to arbitrarily supress a given requirement. 
 
 =over 4
 
 =item * B<module>
 
-TODO
+The module which you don't want to depend.
 
 =back
 
 =item * B<skip_name_resolve_modules>
 
-TODO
+Skip module name resolution.
 
 =over 4
 
 =item * B<module>
 
-TODO
+The module which you want to skip name resolution.
 
 =back
 
 =item * B<fix_module_name>
 
-TODO
+Fix incorrect module name.
 
 =over 4
 
 =item * B<from>
 
-TODO
+The incorrect module name which you want to fix.
 
 =item * B<to>
 
-TODO
+The correct module name.
 
 =back
 
@@ -147,39 +157,42 @@ and installed.
 
 =item * B<force_build>
 
-TODO
+Build the package forcefully if the package is installed already.
 
 =item * B<custom>
 
-TODO
+This is useful if you want to fetch modules from CPAN and use patched CPAN
+module.
 
 =over 4
 
 =item * B<tgz_path>
 
-TODO
+The file path of gzipped tarball containing CPAN source.
 
 =item * B<src_dir>
 
-TODO
+The directory path of CPAN module source direcotry which contains Makefile.PL or
+Build.PL
 
 =item * B<version>
 
-TODO
+The distribution version.
 
 =item * B<dist_name>
 
-TODO
+The CPAN module name.
 
 =item * B<patches>
 
-TODO
+Allows for specifying patch files to be inserted into the spec file
+and applied when building the source.
 
 =back
 
 =item * B<version>
 
-TODO
+The CPAN module version.
 
 =item * B<release>
 
